@@ -1,0 +1,1 @@
+<h2 class="text-center">Bienvenidos al Sistema de Administraci&oacute;n de Librer&iacute;a</h2> 

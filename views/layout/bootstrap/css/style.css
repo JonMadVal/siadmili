@@ -1,0 +1,52 @@
+body{
+    background:url(../img/bg.jpg) no-repeat center top #310b28;    
+}
+/*header*/
+header{
+    color: #fff;
+    text-align: center;
+}
+header h1{
+    height: 1.58em;
+}
+header h1 a{
+    background: url(../img/logo.png) no-repeat center top;
+    display: block;
+    height: 100%;
+}
+header h1 a span{
+    display: none;
+}
+/************************* LOGIN ***********************************/
+div#login{
+    background: url(../img/login.png) bottom left no-repeat;
+    background-color: #fdf8fc;
+    border: .3571em solid #f1c1e6;
+    border-radius: .3571em;
+    margin-bottom: .7143em;
+    overflow: hidden;
+}
+div#login p{
+    padding-right: .7143em;
+}
+/************************** SIDEBAR_LEFT ***************************/
+aside#sidebar_left{
+    background-color: #e9e9e9;
+}
+/************************** CONTENT *********************************/
+#content{
+}
+/************************* FOOTER ***********************************/
+footer{
+    color: #fff;
+}
+footer #copyright img{
+    width: 25%;
+}
+/************************* ESTILOS PERSONALIZADOS *********************/
+.img_adv{
+    background: transparent url(../img/img_alerts.jpg) 0 0 no-repeat;
+    display: inline-block;
+    height: 32px;
+    width: 32px;
+}
