@@ -38,62 +38,22 @@
             <!-- Fin row-fluid para header -->
 
             {if Session::get('logged_in')}
-                {if count($menus)}
-                    <!-- Esta parte debemos realizar una comprobacion de si esta logueado el usario para mostrarlo -->
-                    <!-- Inicio row_fluid para menu -->
-                    <nav class="row-fluid">
-                        <div class="span12">
-                            <div class="navbar">
-                                <div class="navbar-inner">
-                                    <ul class="nav">
-                                        {foreach $menus as $menu}
-                                            {if count($submenus)}
-                                                {foreach $submenus as $submenu}
-                                                    {if $menu.menuID eq $submenu.menuID}
-                                                        {$rows[] = $submenu}
-                                                    {else}
-                                                        {continue}
-                                                    {/if}
-                                                {/foreach}
-                                                {if $menu.menu eq $_layoutParams.item}
-                                                    {assign var=_active value="active"}
-                                                {else}
-                                                    {assign var=_active value=""}
-                                                {/if}
-                                                {if count($rows) eq 0}
-                                                    <li class="{$_active}"><a href="{if $menu.enlace}{$_layoutParams.root}{$menu.enlace}{else}#{/if}">{$menu.menu}</a></li>
-                                                    {else}
-                                                    <li class="{$_active} dropdown">
-                                                        <a href="{if $menu.enlace}{$_layoutParams.root}{$menu.enlace}{else}#{/if}" class="dropdown-toggle" data-toggle="dropdown">{$menu.menu}{if count($rows)}<b class="caret"></b>{/if}</a>
-                                                            {if count($rows)}
-                                                            <ul class="dropdown-menu">
-                                                                {foreach $rows as $row}
-                                                                    <li><a href="{$_layoutParams.root}{$row.enlace}" title="{$row.submenu}">{$row.submenu}</a></li>
-                                                                    {/foreach}
-                                                            </ul>
-                                                            {$rows= array()}
-                                                        {/if}
-                                                    </li>
-                                                {/if}
-                                            {/if}
-                                        {/foreach}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
-                    <!-- Fin row_fluid para menu -->
+                {if isset($widgets.menu)}
+                    {foreach $widgets.menu as $wd}
+                        {$wd}                
+                    {/foreach}
                 {/if}
                 <!-- Inicio row-fuid para sidebar left -->
                 <div class="row-fluid">
                     <!-- Inicio sidebar_left -->
                     <aside class="span3 well" id="sidebar_left">
-                            <!-- Inicio sidebarmenu -->
-                            <ul class="nav nav-list">
-                                <li class="nav-header">Administraci&oacute;n</li>
-                                <li {if isset($menu_left_active) && $menu_left_active eq 'role'}class="active"{/if}><a href="{$_layoutParams.root}acl">Roles</a></li>
-                                <li {if isset($menu_left_active) && $menu_left_active eq 'permiso'}class="active"{/if}><a href="{$_layoutParams.root}acl/permisos">Permisos</a></li>
-                            </ul>
+                        {if ($_acl->permiso('admin_access'))}
+                            {if isset($widgets.sidebar)}
+                                {foreach $widgets.sidebar as $sb}
+                                    {$sb}
+                                {/foreach}
+                            {/if}
+                        {/if}
                     </aside>  
                     <!-- Fin sidebar_left -->
                     <!-- Inicio content -->

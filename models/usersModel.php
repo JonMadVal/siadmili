@@ -62,7 +62,7 @@ class usersModel extends Model
      * @return
      *   False en caso error o array con los datos de los usuarios.
      */
-    public function getUsers($condicion) 
+    public function getUsers($condicion = '') 
     {
         $sql = "SELECT `u`.`userID`, `u`.`login`, `u`.`nombres`, `u`.`apaterno`, `u`.`amaterno`, `u`.`email`, `u`.`telefono`, `r`.`role` "
               ."FROM `users` `u`, `roles` `r` " 

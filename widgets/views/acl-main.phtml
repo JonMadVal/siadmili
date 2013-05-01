@@ -1,0 +1,5 @@
+<ul class="nav nav-list">
+    <li class="nav-header">Administraci&oacute;n</li>
+    <li <?php if (isset($role) && $role == 'role') : ?>class="active"<?php endif; ?>><a href="<?php echo BASE_URL . 'acl' ?>">Roles</a></li>
+    <li <?php if (isset($role) && $role == 'permiso') : ?>class="active"<?php endif; ?>><a href="<?php echo BASE_URL; ?>permisos">Permisos</a></li>
+</ul>

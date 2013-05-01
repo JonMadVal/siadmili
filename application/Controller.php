@@ -8,11 +8,12 @@
  *                  crear este método en las clases que hereden de esta.
  */
 
-abstract class Controller 
+abstract class Controller
 {
     private $_registry;
     protected $_view;
     protected $_acl;
+    protected $_db;
     protected $_request;
 
     public function __construct() 
@@ -52,7 +53,7 @@ abstract class Controller
     // Método que permite cargar la librería
     protected function getLibrary($libreria) 
     {
-        $rutaLibreria = ROOT . 'lib' . DS . $libreria . '.php';
+        $rutaLibreria = ROOT . 'libs' . DS . $libreria . '.php';
 
         if (is_readable($rutaLibreria)) {
             require_once $rutaLibreria;
@@ -122,7 +123,10 @@ abstract class Controller
             $_POST[$clave] = strip_tags($_POST[$clave]);
 
             if (!get_magic_quotes_gpc()) {
-                $_POST[$clave] = mysql_escape_string($_POST[$clave]);
+                //$_POST[$clave] = PDO::quote($_POST[$clave]);
+                // Ojo debemos utilizar una función que sanitice string.
+                $_POST[$clave] = $_POST[$clave];
+                
             }
 
             return trim($_POST[$clave]);

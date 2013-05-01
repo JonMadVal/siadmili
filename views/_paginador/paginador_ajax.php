@@ -49,10 +49,11 @@
                         if ($i == $this->_paginacion['limite']) {
                             echo 'selected="selected"';
                         }
-                        ?>  ><?php echo $i; ?></option>
-                            <?php endfor; ?>
+                        ?>><?php echo $i; ?>
+                        </option>
+                    <?php endfor; ?>
                 </select>
-                <span class="total" data-total="<?php echo $this->_paginacion['total'] ?>">P&aacute;gina <strong><?php echo $this->_paginacion['actual'] ?></strong> de <strong><?php echo $this->_paginacion['total'] ?></strong></span>
+                <small><span class="total" data-total="<?php echo $this->_paginacion['total'] ?>">P&aacute;gina <strong><?php echo $this->_paginacion['actual'] ?></strong> de <strong><?php echo $this->_paginacion['total'] ?></strong></span></small>
             </form>
         </div>
     </div>

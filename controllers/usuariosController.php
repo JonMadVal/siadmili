@@ -10,7 +10,6 @@ class usuariosController extends Controller
 {
     private $_login;
     private $_levels;
-    private $_menus;
     private $_paginador;
 
     public function __construct() 
@@ -18,8 +17,6 @@ class usuariosController extends Controller
         parent::__construct();
         $this->_login = $this->loadModel('users');
         $this->_levels = $this->loadModel('level');
-        $this->_menus = $this->loadModel('menu');
-        //$this->getLibrary('paginador');
         $this->_paginador = new Paginador();
     }
 
@@ -38,15 +35,6 @@ class usuariosController extends Controller
             $level = $this->_levels->getLevels();
             if (is_array($level) && count($level)) {
                 $this->_view->assign('_level', $level);
-            }
-            
-            $menus = $this->_menus->getMenus();
-            if (is_array($menus) && count($menus)) {
-                $this->_view->assign('menus', $menus);
-                $submenus = $this->_menus->getSubmenus();            
-                if (is_array($submenus) && count($submenus)) {
-                    $this->_view->assign('submenus', $submenus);
-                }   
             }
             
             $this->_view->assign('users', $this->_paginador->paginar($this->_login->getUsers()));
@@ -182,7 +170,6 @@ class usuariosController extends Controller
 
         $imagen = '';
         if (isset($_FILES['avatar']['name'])) {
-            //$this->getLibrary('upload' . DS . 'class.upload');
             $ruta = ROOT . 'public' . DS . 'images' . DS . 'users' . DS;
             $upload = new upload($_FILES['avatar'], 'es_ES');
             $upload->file_max_size = '1048576';
@@ -323,7 +310,6 @@ class usuariosController extends Controller
                 unlink($ruta_avatar_origin);
                 unlink($ruta_thumbnail);
             }
-            //$this->getLibrary('upload' . DS . 'class.upload');
             $ruta = ROOT . 'public' . DS . 'images' . DS . 'users' . DS;
             $upload = new upload($_FILES['avatarEdit'], 'es_ES');
             $upload->file_max_size = '1048576';
@@ -509,14 +495,6 @@ class usuariosController extends Controller
             
             $result = array_keys($permisosUsuario);
             $this->_view->setJs(array('fnPermisos'));
-            $menus = $this->_menus->getMenus();
-            if (is_array($menus) && count($menus)) {
-                $this->_view->assign('menus', $menus);
-                $submenus = $this->_menus->getSubmenus();            
-                if (is_array($submenus) && count($submenus)) {
-                    $this->_view->assign('submenus', $submenus);
-                }   
-            }
             $this->_view->assign('titulo', APP_NAME . ' - Permisos de Usuarios');
             $this->_view->assign('permisos', $this->_paginador->paginar($result, $pagina));
             $this->_view->assign('paginacion', $this->_paginador->getView('paginador', 'usuarios/permisos/' . $id));

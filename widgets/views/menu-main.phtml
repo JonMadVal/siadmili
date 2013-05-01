@@ -1,0 +1,47 @@
+<nav class="row-fluid">
+    <div class="span12">
+        <div class="navbar">
+            <div class="navbar-inner">
+                <ul class="nav">
+                <?php 
+                    $rows = NULL;
+                    foreach ($menu as $m) {
+                        if (count($submenus)) {
+                            foreach ($submenus as $sm) {
+                                if ($m['menuID'] == $sm['menuID']) {
+                                    $rows[] = $sm;
+                                } else {
+                                    continue;
+                                }
+                            }
+                            $active = ($m['menu'] == $item) ? "active" : "";
+                            $enlace = (isset($m['enlace'])) ? BASE_URL . $m['enlace'] : "#";
+                            if (count($rows) == 0) {
+                ?>
+                    <li class="<?php echo $active; ?>">                                    
+                        <a href="<?php echo $enlace; ?>"><?php echo $m['menu']; ?></a>
+                    </li>
+                <?php } else { ?>
+                    <li class="<?php echo $active; ?> dropdown">
+                        <a href="<?php echo $enlace; ?>" class="dropdown-toggle" data-toggle="dropdown">
+                            <?php echo $m['menu']; ?>
+                            <?php if (count($rows)) : ?><b class="caret"></b><?php endif; ?>
+                        </a>
+                        <?php if (count($rows)) : ?>
+                        <ul class="dropdown-menu">
+                            <?php foreach ($rows as $row) : ?>
+                            <li><a href="<?php echo BASE_URL . $row['enlace']; ?>" title="<?php echo $row['submenu']; ?>"><?php echo $row['submenu']; ?></a></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php endif; ?>
+                    </li>
+                <?php 
+                        }
+                    }
+                }
+                ?>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>

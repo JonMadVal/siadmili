@@ -23,7 +23,8 @@ class Model
      * @param type $valor
      * @return string
      */
-    public function comillas_inteligentes($valor){
+    public function comillas_inteligentes($valor)
+    {
         // Retirar las barras
 	if (get_magic_quotes_gpc()) {
             $valor = stripslashes($valor);

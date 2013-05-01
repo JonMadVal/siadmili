@@ -45,7 +45,7 @@ $(document).on("ready", function() {
     });
 
     $("body").on('change', "#registros", function(ev) {
-        ev.preventDefault
+        ev.preventDefault();
         loadData();
     });
 });

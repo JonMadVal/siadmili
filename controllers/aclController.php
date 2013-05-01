@@ -10,25 +10,12 @@ class aclController extends Controller
 {
 
     private $_aclm;
-    private $_menu;
     private $_paginador;
 
     public function __construct() 
     {
         parent::__construct();
         $this->_aclm = $this->loadModel('acl');
-        $this->_menu = $this->loadModel('menu');
-
-        $menus = $this->_menu->getMenus();
-        if (is_array($menus) && count($menus)) {
-            $this->_view->assign('menus', $menus);
-            $submenus = $this->_menu->getSubmenus();
-            if (is_array($submenus) && count($submenus)) {
-                $this->_view->assign('submenus', $submenus);
-            }
-        }
-
-        $this->getLibrary('paginador');
         $this->_paginador = new Paginador();
     }
 
@@ -252,7 +239,6 @@ class aclController extends Controller
             } else {
                 $pagina = (int) $pagina;
             }
-            $this->getLibrary('paginador');
             $paginador = new Paginador();
             $result = $this->_acl->getPermisos();
             $limite = '10';
@@ -275,7 +261,8 @@ class aclController extends Controller
      * @return
      *   Carga la vista con los permisos disponibles.
      */
-    public function setPermiso() {
+    public function setPermiso() 
+    {
         if (isset($_POST['optEdit']) && $_POST['optEdit'] == '1') {
             // Verificamos el txtPermisoEdit tenga dato y que no este registrado
             if (!$this->getPostParam('txtPermisoEdit')) {
@@ -339,7 +326,8 @@ class aclController extends Controller
      * @return
      *   Mostramos a través de Json los datos del permiso a editar.
      */
-    public function editPermiso() {
+    public function editPermiso() 
+    {
         $id = $this->filtrarInt($_POST['id']);
         $result = $this->_acl->getPermisoById($id);
         if (!$result) {
@@ -361,7 +349,8 @@ class aclController extends Controller
      * @return
      *   Mostrará 0 en caso falle o 1 en caso se haya eliminado.
      */
-    public function deletePermiso() {
+    public function deletePermiso() 
+    {
         $id = $this->filtrarInt($_POST['id']);
         $result = $this->_acl->deletePermiso($id);
         if (!$result) {

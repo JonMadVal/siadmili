@@ -152,7 +152,7 @@ class aclModel extends Model
     {
         $roleID = (int) $roleID;
         $permisoID = (int) $permisoID;
-        $this->_dbh->query("DELETE FROM permisos_role WHERE permiso = {$permisoID} AND role = {$roleID}");
+        $this->_dbh->query("DELETE FROM permisos_role WHERE id_permiso = {$permisoID} AND roleID = {$roleID}");
     }
 
     // Obtener el key del permiso
