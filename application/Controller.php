@@ -125,8 +125,7 @@ abstract class Controller
             if (!get_magic_quotes_gpc()) {
                 //$_POST[$clave] = PDO::quote($_POST[$clave]);
                 // Ojo debemos utilizar una función que sanitice string.
-                $_POST[$clave] = $_POST[$clave];
-                
+                $_POST[$clave] = $_POST[$clave];                
             }
 
             return trim($_POST[$clave]);

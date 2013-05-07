@@ -18,6 +18,7 @@ class View extends Smarty
     private $_rutas;
     private $_template;
     private $_item;
+    private $_itemAcl;
 
     public function __construct(Request $peticion, ACL $_acl) 
     {
@@ -30,6 +31,7 @@ class View extends Smarty
         $this->_rutas = array();
         $this->_template = DEFAULT_LAYOUT;
         $this->_item = '';
+        $this->_itemAcl = '';
         
         $modulo = $this->_request->getModulo();
         $controlador = $this->_request->getControlador();
@@ -43,10 +45,14 @@ class View extends Smarty
         }
     }
 
-    public function renderizar($vista, $item = FALSE, $viewAjax = FALSE) 
+    public function renderizar($vista, $item = FALSE,  $itemAcl = FALSE, $viewAjax = FALSE) 
     {
         if ($item) {
             $this->_item = $item;
+        }
+        
+        if ($itemAcl) {
+            $this->_itemAcl = $itemAcl;
         }
         
         $this->template_dir = ROOT . 'views' . DS . 'layout' . DS . $this->_template . DS;
@@ -59,6 +65,7 @@ class View extends Smarty
             'ruta_img' => BASE_URL . 'views/layout/' . $this->_template . '/img/',
             'ruta_js' => BASE_URL . 'views/layout/' . $this->_template . '/js/',
             'item' => $this->_item,
+            'itemAcl' => $this->_itemAcl,
             'js' => $this->_js,
             'jsPlugin' => $this->_jsPlugin,
             'css' => $this->_css,
@@ -178,7 +185,7 @@ class View extends Smarty
             ),
             'acl-main' => array(
                 'config' => $this->widget('acl', 'getConfig'),
-                'content' => array('acl', 'getAcl')
+                'content' => array('acl', 'getAcl', array($this->_itemAcl))
             )
         );
         

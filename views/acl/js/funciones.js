@@ -11,16 +11,9 @@ $(document).on("ready", function() {
         if ($page != 0 && $page <= $no_of_pages) {
             $("form[name='frm_goto']").submit();
         } else {
-            // En caso no hayamos ingresado la página o esta es superior al total de páginas nos muestra un alert de error
-            $('#errorModal').modal();
-            $('#errorModal').on('shown', function() {
-                $(".modal-body p").text("Ingrese una página entre 1 y " + $no_of_pages);
-                $(':input.goto').val('');
-                $page = null;
-            });
-            $('#errorModal').on('hidden', function() {
-                $(':input.goto').focus();
-            });
+            jAlert('Ingrese una p&aacute;gina entre 1 y ' + $no_of_pages, 'Advertencia');
+            $('.goto').val("").focus();
+            return false;
         }
     });
 
@@ -34,11 +27,11 @@ $(document).on("ready", function() {
         })
     });
 
-    // Enviamos el submit a acl/index para agregar el role
+    /* Enviamos el submit a acl/index para agregar el role
     $(".btnAddRole").on("click", function(ev) {
         ev.preventDefault();
         $("#frmAddRole").submit();
-    });
+    });*/
 
     var roleValido;
     //Validar si role ya esta registrado
@@ -100,54 +93,35 @@ $(document).on("ready", function() {
 
     $("body").on("click", '.delRole', function(ev) {
         ev.preventDefault();
-        var $roleID = $(this).data('roleid');
         var $role = $(this).data('role');
-        $('#delRoleModal').modal();
-        $('#delRoleModal').on('shown', function() {
-            $(".modal-body p").text("¿Esta seguro que desea eliminar el role: " + $role + "?");
-            $(":input[name='roleID']").val($roleID);
+        var $roleID = $(this).data('roleid');
+        jConfirm('¿Está seguro que desea eliminar el registro ' + $role + '?', 'Eliminación de registro', function(r) {
+            if (r == true) {
+                $.post(_root_ + 'acl/deleteRole', {"id": $roleID}, function(data) {
+                    if (data == '1') {
+                        jConfirm('Se elimin&oacute; correctamente el registro', 'Aviso', function(r) {
+                            if (r == true) {
+                                window.location = _root_ + 'acl';
+                            }
+                        });
+                    } else {
+                        jConfirm('No se pudo eliminar el registro, por favor verifique', 'Aviso', function(r) {
+                            if (r == true) {
+                                window.location = _root_ + 'acl';
+                            }
+                        });
+                    }
+                });
+            }
         });
-        $('#delRoleModal').on('hidden', function() {
-            $(".modal-body p").text('* Es requerido');
-        })
     });
 
     $("#delRoles").on('click', function(ev) {
         ev.preventDefault();
-        $("#frmRoles").submit();
+        jConfirm('¿Está seguro que desea eliminar los registros seleccionados?', 'Eliminación de registros', function(r) {
+            if (r == true) {
+                $("#frmRoles").submit();
+            }
+        });
     });
-
-    /* Enviamos los datos a través del plugin jquery.form para agregar un nuevo usuario
-     var options = {
-     target      :   '.informe', // elemento destino que se actualizará 
-     beforeSubmit:   showRequest, //  respuesta antes de llamarpre-submit callback 
-     success     :   showResponse  //  respuesta después de llamar };
-     // vincular formulario usando 'ajaxForm' 
-     $('#frmAddRole').ajaxForm(options);
-     $('#frmEditRole').ajaxForm(options);
-     };*/
 });
-
-// respuesta antes de envío 
-function showRequest(formData, jqForm) {
-    var extra = [{
-            name: 'ajax',
-            value: '1'
-        }];
-    $.merge(formData, extra);
-    return true;
-}
-
-// respuesta después de envío 
-function showResponse(responseText, statusText) {
-    if (responseText == 'Se ingres&oacute; correctamente al nuevo role' || responseText == 'El role se edit&oacute; satisfactoriamente.') {
-        $('#exito').show();
-        $('#error').hide();
-        $('#frmAddRole').resetForm();
-        loadData(1);
-    }
-    else {
-        $('#error').show();
-        $('#exito').hide();
-    }
-}

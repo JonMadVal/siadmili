@@ -23,8 +23,8 @@
 
 <!-- Inicio div grid -->
 <div id="grid">
-    {if isset($_roles) && count($_roles)}
-        <form id="frmRoles" action="{$_layoutParams.root}acl/deleteRole" method="post">
+    {if isset($_roles) && count($_roles)}        
+        <form id="frmRoles" action="{$_layoutParams.root}acl/deleteRoles" method="post">
             <table class="table table-striped">
                 <caption class="text-info">Mantemiento de Roles del Sistema, puede agregar, editar o eliminar alg&uacute;n registro.</caption>
                 <thead>
@@ -43,7 +43,7 @@
                             <td>{$rol.role}</td>
                             <td><a href='{$_layoutParams.root}acl/permisosRole/{$rol.roleID}' title='Permisos'><i class="icon-tasks"></i></a></td>
                             <td><a href='javascript:void(0);' class="editRole" data-role="{$rol.roleID}" title='Editar rol {$rol.role}'><i class="icon-edit"></i></a></td>
-                            <td><a href='javascript:void(0);' class="delRole" data-roleID="{$rol.roleID}" data-role="{$rol.role}" title="Eliminar rol {$rol.role}"><i class="icon-trash"></i></a></td>
+                            <td><a href='javascript:void(0);' class="delRole" data-role="{$rol.role}" data-roleID="{$rol.roleID}" title="Eliminar rol {$rol.role}"><i class="icon-trash"></i></a></td>
                         </tr>
                     {/foreach}
                 </tbody>
@@ -107,25 +107,6 @@
             <input type="hidden" name="roleID" value="" />
             <button class="btn" data-dismiss="modal" aria-hidden="true">Cerrar</button>
             <button class="btn btn-primary">Actualizar</button>
-        </div>
-    </form>
-</div>
-
-<!-- Modal DelRole -->
-<div id="delRoleModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-        <h3 id="myModalLabel">Advertencia</h3>
-    </div>
-    <form class="form-horizontal" name="frmDelRole" id="frmDelRole" action="{$_layoutParams.root}acl/deleteRole" method="post">
-        <div class="modal-body">
-            <p class="text-center text-error"></p>
-            <span class="img_adv"></span>
-            <input type="hidden" name="roleID" value="" />
-        </div>
-        <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" aria-hidden="true">Cancelar</button>
-            <button class="btn btn-danger">Eliminar</button>
         </div>
     </form>
 </div>

@@ -1,102 +1,123 @@
-<h2>Administraci&oacute;n de Permisos</h2> 
-{if isset($permisos) && count($permisos)}
-    <div id="grid">
-        <div class="data">
-            <table id="rounded-corner">
+<h2 class="text-center">Administraci&oacute;n de Permisos</h2> 
+{if isset($_error)}
+    <div class="alert alert-error">{$_error}</div>
+{/if}
+{if isset($_exito)}
+    <div class="alert alert-success">{$_exito}</div>
+{/if}
+
+{if isset($_errores) && count($_errores) > 0}
+    <div class="alert alert-error">
+        {foreach $_errores as $error}
+            {$error}</br>
+        {/foreach}
+    </div>
+{/if}
+{if isset($_exitos) && count($_exitos) > 0} 
+    <div class="alert alert-success">
+        {foreach $_exitos as $exito}
+            {$exito}</br>
+        {/foreach}
+    </div>
+{/if}
+<div id="grid">
+    {if isset($_permisos) && count($_permisos)}
+        <form id="frmPermisos" action="{$_layoutParams.root}acl/deletePermisos" method="post">
+            <table class="table table-striped">
+                <caption class="text-info">Mantemiento de Permisos del Sistema, puede agregar, editar o eliminar alg&uacute;n registro.</caption>
                 <thead>
                     <tr>
-                        <th scope="col" class="rounded-company"></th>
-                        <th scope="col" class="rounded">Permiso</th>
-                        <th scope="col" class="rounded">Valor</th>
-                        <th scope="col" class="rounded">Editar</th>
-                        <th scope="col" class="rounded-q4">Eliminar</th>
+                        <th>&nbsp;</th>
+                        <th>Permiso</th>
+                        <th>Valor</th>
+                        <th>Editar</th>
+                        <th>Eliminar</th>
                     </tr>
                 </thead>
-                <tfoot>
-                    <tr>
-                        <td colspan="4" class="rounded-foot-left"><em>Mantemiento de Permisos, puede habilitar, denegar o ignorar un permiso.</em></td>
-                        <td class="rounded-foot-right">&nbsp;</td>
-                    </tr>
-                </tfoot>
                 <tbody>
-                    {foreach item=pr from=$permisos}
+                    {foreach $_permisos as $pr}
                         <tr>
-                            <td><input type='checkbox' name='id_permiso' value='{$pr.id_permiso}' /></td>
+                            <td><input type='checkbox' name='idPermiso[]' value='{$pr.id_permiso}' /></td>
                             <td>{$pr.permiso}</td>
-                            <td>{$pr.clave }</td>
-                            <td><a class="editPermiso" href="javascript:void(0);" p="{$pr.id_permiso}" title='Editar permiso {$pr.permiso}' ><img src='{$_layoutParams.ruta_img}user_edit.png' /></a></td>
-                            <td><a href='javascript:void(0);' class='ask' title='Eliminar permiso {$pr.permiso}' onclick="deleteRow('{$pr.permiso}', '{$pr.id_permiso}')"><img src='{$_layoutParams.ruta_img}trash.png' /></a></td></tr>
+                            <td>{$pr.key}</td>
+                            <td><a href='javascript:void(0);' class="editPermiso" data-permisoID="{$pr.id_permiso}" title='Editar permiso {$pr.permiso}'><i class="icon-edit"></i></a></td>
+                            <td><a href='javascript:void(0);' class="delPermiso" data-permiso="{$pr.permiso}" data-permisoID="{$pr.id_permiso}" title="Eliminar permiso {$pr.permiso}"><i class="icon-trash"></i></a></td>
                         </tr>
                     {/foreach}
                 </tbody>
             </table>  
-            <a id='addPermiso' href='javascript:void(0);' class='bt_green' title='Agregar Permiso'><strong>Agregar Permiso</strong></a>
-            <a href='#' class='bt_blue'><span class='bt_blue_lft'></span><strong>View all items from category</strong><span class='bt_blue_r'></span></a>
-            <a href='#' class='bt_red'><span class='bt_red_lft'></span><strong>Delete items</strong><span class='bt_red_r'></span></a>
-        </div>
-        <div class="pagination">
-            {$paginacion|default:""}
-        </div>
+            <a id="addPermiso" href="javascript:void(0);" class="btn btn-primary" title="Agregar permiso">Agregar permiso</a>
+            <a id="delPermisos" href="javascript:void(0);" class="btn btn-danger" title="Eliminar items">Eliminar items</a>
+        </form>
+        {if isset($paginacion)}
+            <div class="pagination">
+                {$paginacion}
+            </div>
+        {/if}
+    {else}
+        <h3>No hay registros de permisos.</h3>
+    {/if}
+</div>
+
+<!-- Modal Agregar Role -->
+<div id="addPermisoModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">Agregar Permiso</h3>
     </div>
-{else}
-    <h4>No hay registros de permisos.</h4>
-{/if}
-
-<div id="loading">
-    <img src="{$_layoutParams.ruta_img}ajax-loader.gif" border="0" />
-</div>
-<div id="modal_frmPermiso">
-    <form id="frmPermiso" name="frmPermiso" action="{$_layoutParams.root}acl/setPermiso" method="post">
-        <fieldset>
-            <dl>
-                <dt><label for="txtPermiso">Permiso:</label></dt>
-                <dd>
-                    <input class="NFText" type="text" name="txtPermiso" id="txtPermiso" size="54" onblur="validate(this.value, this.id, '{$_layoutParams.root}acl/validateAjax');" />
-                    <div id="txtPermisoFailed"></div>
-                </dd>
-            </dl>
-            <dl>
-                <dt><label for="txtKey">Key:</label></dt>
-                <dd>
-                    <input class="NFText" type="text" name="txtKey" id="txtKey" size="54" onblur="validate(this.value, this.id, '{$_layoutParams.root}acl/validateAjax');" />
-                    <div id="txtKeyFailed"></div>
-                </dd>
-            </dl>
-            <dl class="submit">
-                <input class="NFButton" type="button" name="submit" id="insertPermiso" value="Agregar" />
-            </dl>
-        </fieldset>
+    <form class="form-horizontal" name="frmAddPermiso" id="frmAddPermiso" action="" method="post">
+        <div class="modal-body">
+            <div class="control-group">
+                <label class="control-label" for="txtPermiso">Permiso: <span class="text-error">*</span></label>
+                <div class="controls">
+                    <input type="text" name="txtPermiso" id="txtPermiso">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="txtKey">Key: <span class="text-error">*</span></label>
+                <div class="controls">
+                    <input type="text" name="txtKey" id="txtKey">
+                </div>
+            </div>
+            <p class="text-error">* Es requerido</p>
+        </div>
+        <div class="modal-footer">
+            <input type="hidden" name="grabar" value="1" />
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Cerrar</button>
+            <button class="btn btn-primary">Guardar</button>
+        </div>
     </form>
-</div>  
-
-<div id="modal_frmPermisoEdit">
-    <form id="frmEditPermiso" name="frmEditPermiso" action="{$_layoutParams.root}acl/setPermiso" method="post">
-        <fieldset>
-            <dl>
-                <dt><label for="txtPermisoEdit">Permiso:</label></dt>
-                <dd>
-                    <input class="NFText" type="text" name="txtPermisoEdit" id="txtPermisoEdit" size="54" onblur="validate(this.value, this.id, '{$_layoutParams.root}acl/validateAjax');" />
-                    <div id="txtPermisoEditFailed"></div>
-                </dd>
-            </dl>
-            <dl>
-                <dt><label for="txtKeyEdit">Key:</label></dt>
-                <dd>
-                    <input class="NFText" type="text" name="txtKeyEdit" id="txtKeyEdit" size="54" onblur="validate(this.value, this.id, '{$_layoutParams.root}acl/validateAjax');" />
-                    <div id="txtKeyEditFailed"></div>
-                </dd>
-            </dl>
-            <input type="hidden" id="id" name="id" value="" />
-            <input type="hidden" name="optEdit" value="1" />
-            <dl class="submit">
-                <input class="NFButton" type="button" name="submit" id="editPermiso" value="Editar" />
-            </dl>
-        </fieldset>
-    </form>
-</div> 
-<div id="exito" class="valid_box informe">
-    <p></p>
 </div>
-<div id="error" class="error_box informe">
-    <p></p>
-</div>  
+
+<!-- Modal Editar Role -->
+<div id="editPermisoModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">Editar Permiso</h3>
+    </div>
+    <form class="form-horizontal" name="frmEditPermiso" id="frmEditPermiso" action="" method="post">
+        <div class="modal-body">
+            <div class="control-group">
+                <label class="control-label" for="txtEditPermiso">Permiso: <span class="text-error">*</span></label>
+                <div class="controls">
+                    <input type="text" class="required" name="txtEditPermiso" id="txtEditPermiso">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="txtEditKey">Key: <span class="text-error">*</span></label>
+                <div class="controls">
+                    <input type="text" class="required" name="txtEditKey" id="txtEditKey">
+                </div>
+            </div>
+            <p class="text-error">* Es requerido</p>
+        </div>
+        <div class="modal-footer">
+            <input type="hidden" name="grabar" value="2" />
+            <input type="hidden" name="permisoID" value="" />
+            <input type="hidden" name="hd_permiso" value="" />
+            <input type="hidden" name="hd_key" value="" />
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Cerrar</button>
+            <button class="btn btn-primary">Actualizar</button>
+        </div>
+    </form>
+</div>

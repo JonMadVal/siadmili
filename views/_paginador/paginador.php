@@ -45,19 +45,4 @@
             </form>
         </div>
     </div>
-
-    <!-- Modal -->
-    <div id="errorModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-        <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-            <h3 id="myModalLabel">Advertencia</h3>
-        </div>
-        <div class="modal-body">
-            <p class="text-center text-warning"></p>
-            <span class="img_adv"></span>
-        </div>
-        <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" aria-hidden="true">Cerrar</button>
-        </div>
-    </div>
 <?php endif; ?>

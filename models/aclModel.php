@@ -191,8 +191,7 @@ class aclModel extends Model
         $stmt->execute();
         if ($stmt->rowCount() == 0) {
             return TRUE;
-        }
-        else {
+        } else {
             return FALSE;
         }
         $this->_dbh = NULL;
@@ -294,20 +293,45 @@ class aclModel extends Model
      */
     public function getPermisos()
     {
-        $sql = "SELECT id_permiso, permiso, `key` as clave FROM permisos;";
-        $res = $this->_db->con()->query($sql);
-        if (!$res) {
+        $stmt = $this->_dbh->query("SELECT `id_permiso`, `permiso`, `key` FROM `permisos`");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $this->_dbh = NULL;
+    }
+    
+    /**
+     * Verificamos si existe el permiso en la base de datos
+     * @param str $permiso
+     * @return boolean
+     */
+    public function verifyPermiso($permiso)
+    {
+        $stmt = $this->_dbh->prepare("SELECT `id_permiso` FROM `permisos` WHERE `permiso` = :permiso");
+        $stmt->bindParam(":permiso", $permiso, PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            return TRUE;
+        } else {
             return FALSE;
         }
-        if ($res->num_rows <= 0) {
+        $this->_dbh = NULL;
+    }
+    
+    /**
+     * Verificamos si el key ya existe en la base de datos
+     * @param str $key
+     * @return boolean
+     */
+    public function verifyKey($key)
+    {
+        $stmt = $this->_dbh->prepare("SELECT `id_permiso` FROM permisos WHERE `key` = :key");
+        $stmt->bindParam(":key", $key, PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            return TRUE;
+        } else {
             return FALSE;
         }
-        while ($reg = $res->fetch_assoc()) {
-            $this->_perm[] = $reg;
-        }
-
-        $res->free();
-        return $this->_perm;
+        $this->_dbh = NULL;
     }
     
     /**
@@ -322,64 +346,19 @@ class aclModel extends Model
      * @return
      *   False en caso de error o True en caso se registre el permiso.
      */
-    public function insertPermiso($permiso, $key) {
-        // Verificamos que  no exista ya el permiso y el key
-        $sql = sprintf("SELECT id_permiso FROM permisos WHERE permiso = %s or `key` = %s", 
-        parent::comillas_inteligentes($permiso), parent::comillas_inteligentes($key));
-        $res = $this->_db->con()->query($sql);
-        if ($res->num_rows > 0) {
-            return FALSE;
-        } 
-        // Si no estan ya registrados insertamos el permiso
-        $sql = sprintf(
-                "INSERT INTO permisos (permiso, `key`) "
-                . "VALUES (%s, %s) ;", parent::comillas_inteligentes($permiso), parent::comillas_inteligentes($key)
-        );
-        $res = $this->_db->con()->query($sql);
-        if (!$res) {
+    public function insertPermiso($permiso, $key) 
+    {        
+        $stmt = $this->_dbh->prepare("INSERT INTO `permisos` VALUES (NULL, :permiso, :key)");
+        $stmt->bindParam(":permiso", $permiso, PDO::PARAM_STR);
+        $stmt->bindParam(":key", $key, PDO::PARAM_STR);
+        if ($stmt->execute()) {
+            return TRUE;
+        } else {
             return FALSE;
         }
-        return TRUE;
+        $this->_dbh = NULL;
     }
-    
-    /**
-     * Verificar que nombre de permiso no se encuentra registrado.
-     *
-     * @param str $perm
-     *   Permiso a verificar.
-     *
-     * @return
-     *   False en caso se encuentre registrado o True en caso no lo esté.
-     */
-    public function getPermisoByUsername($perm) {
-        $sql = "SELECT id_permiso "
-                . "FROM permisos WHERE permiso = '" . $perm . "'; ";
-        $res = $this->_db->con()->query($sql);
-        if ($res->num_rows <= 0) {
-            return 1;  // Que usuario no esta en la base de datos
-        }
-        return 0;
-    }
-    
-    /**
-     * Verificar que key de permiso no se encuentra registrado.
-     *
-     * @param str $key
-     *   Key a verificar.
-     *
-     * @return
-     *   False en caso se encuentre registrado o True en caso no lo esté.
-     */
-    public function verifyKeyExist($key) {
-        $sql = "SELECT id_permiso "
-                . "FROM permisos WHERE `key` = '" . $key . "'; ";
-        $res = $this->_db->con()->query($sql);
-        if ($res->num_rows <= 0) {
-            return 1;  // Que usuario no esta en la base de datos
-        }
-        return 0;
-    }
-    
+        
      /**
      * Obtener datos de permiso específico.
      *
@@ -389,26 +368,21 @@ class aclModel extends Model
      * @return
      *   False en caso de error o array con los datos del permiso.
      */
-    public function getPermisoById($id) {
-        $sql = "SELECT id_permiso, permiso, `key` FROM permisos WHERE id_permiso = $id;";
-        $res = $this->_db->con()->query($sql);
-        if (!$res) {
-            return FALSE;
-        }
-        if ($res->num_rows <= 0) {
-            return FALSE;
-        }
-        if ($reg = $res->fetch_assoc()) {
-            $this->_role[] = $reg;
-        }
-
-        return $this->_role;
+    public function getPermisoById($id) 
+    {
+        $id = (int) $id;
+        $stmt = $this->_dbh->prepare("SELECT `id_permiso`, `permiso`, `key` FROM `permisos` WHERE `id_permiso` = :id;");
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $this->_perm = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $this->_perm;        
+        $this->_dbh = NULL;
     }
     
     /**
      * Editar permiso.
      *
-     * @param str $perm
+     * @param str $permiso
      *   Nombre del permiso a editar. 
      * 
      * @param str $key
@@ -420,25 +394,19 @@ class aclModel extends Model
      * @return
      *   False en caso de error o True en caso se edite el permiso.
      */
-    public function editPermisoById($perm, $key, $id) {
-        $sql = sprintf("SELECT id_permiso FROM permisos WHERE permiso = %s OR `key` = %s", parent::comillas_inteligentes($perm), parent::comillas_inteligentes($key));
-        $res = $this->_db->con()->query($sql);
-
-        if ($res->num_rows > 0) {
+    public function editPermiso($permiso, $key, $id) 
+    {
+        $id = (int) $id;
+        $stmt = $this->_dbh->prepare("UPDATE `permisos` SET permiso = :permiso, `key` = :key WHERE id_permiso = :id");
+        $stmt->bindParam(':permiso', $permiso, PDO::PARAM_STR);
+        $stmt->bindParam(':key', $key, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        if ($stmt->execute()) {
+            return TRUE;
+        } else {
             return FALSE;
         }
-
-        $sql = sprintf(
-                "UPDATE permisos "
-                . "SET permiso = %s AND `key`= %s"
-                . "WHERE id_permiso = %s", parent::comillas_inteligentes($perm), parent::comillas_inteligentes($key), parent::comillas_inteligentes($id)
-        );
-
-        $res = $this->_db->con()->query($sql);
-        if (!$res) {
-            return FALSE;
-        }
-        return TRUE;
+        $this->_dbh = NULL;
     }
     
      /**
@@ -450,15 +418,14 @@ class aclModel extends Model
      * @return
      *   False en caso de error o True en caso se elimine el role.
      */
-    public function deletePermiso($id) {
-        $sql = sprintf(
-                "DELETE FROM permisos "
-                . "WHERE id_permiso = %s", parent::comillas_inteligentes($id)
-        );
-        $res = $this->_db->con()->query($sql);
-        if (!$res) {
-            return FALSE;
-        }
-        return TRUE;
+    public function deletePermiso($id) 
+    {
+        $result = NULL;
+        $id = (int) $id;
+        $stmt = $this->_dbh->prepare("DELETE FROM `permisos` WHERE `id_permiso` = :id");
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $result = $stmt->execute();
+        return $result;
+        $this->_dbh = NULL;
     }
 }

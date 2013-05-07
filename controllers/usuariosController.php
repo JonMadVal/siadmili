@@ -79,7 +79,7 @@ class usuariosController extends Controller
         if (is_array($users) && count($users)) {
             $this->_view->assign('users', $this->_paginador->paginar($users, $page, $registros));
             $this->_view->assign('paginacion', $this->_paginador->getView('paginador_ajax'));
-            $this->_view->renderizar('displayUser', FALSE, TRUE);            
+            $this->_view->renderizar('displayUser', FALSE, FALSE, TRUE);            
         }
     }
 

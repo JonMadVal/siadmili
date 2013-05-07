@@ -1,158 +1,139 @@
-$(document).ready(function(){
-    // Otorgamos al primer input el focus
-    $(":input:first").focus();
-   
-    $('#go_btn').live('click',function(){
-        var page = parseInt($('.goto').val());
-        var no_of_pages = parseInt($('.total').attr('a'));
-        if(page != 0 && page <= no_of_pages){
-            window.location = getBaseURL() + 'acl/permisos/' + page;
-        }else{
-            jAlert('Ingrese una p&aacute;gina entre 1 y '+no_of_pages, 'Advertencia');
+$(document).on("ready", function() {
+    // Asignamos el focus al input para ver página específica
+    $(':input.goto').focus();
+
+    // Comportamiento del botón para ver una página específica
+    $(':input#goto_btn').on("click", function(ev) {
+        ev.preventDefault();
+        var $page = parseInt($('.goto').val());
+        var $no_of_pages = parseInt($('.total').data('total'));
+        $("form[name='frm_goto']").attr("action", _root_ + "acl/permisos/" + $page);
+        if ($page != 0 && $page <= $no_of_pages) {
+            $("form[name='frm_goto']").submit();
+        } else {
+            jAlert('Ingrese una p&aacute;gina entre 1 y ' + $no_of_pages, 'Advertencia');
             $('.goto').val("").focus();
             return false;
         }
     });
-    
-    // Hacemos que todos los div cuyo id empiecen por frm inicialmente no se muestren
-    $('div[id^="frm"]').addClass('hidden');
-    $('div[id^="modal"]').addClass('hidden');
-    
-    // Todo div cuyo id terminen con Failed no se muestren inicialmente
-    $('div[id $= "Failed"]').addClass('hidden');
-    
-    // Ocultamos la caja donde se muestran los errores y de éxito
-    $('#error').hide();
-    $('#exito').hide();
-    
-    // Editar un usuario
-    $('.editPermiso').live('click', function(){
-        $('#error').hide();
-        $('#exito').hide();
-        var id = $(this).attr('p');
-        $.post(getBaseURL()+'acl/editPermiso', {'id': id}, function(data) {
-            $('#modal_frmPermisoEdit').dialog({
-                modal    :   true,
-                minWidth :   620,
-                minHeight:   150,
-                title    :   'Editar Permiso',
-                show     :   'slide',
-                hide     :   'slide',
-                resizable:   false,
-                open     :   function(){
-                    $('div[id$="Failed"]').addClass('hidden');
-                    $('input[name^="hd"]').addClass('hidden');
-                    $('input[name^="namePermiso"]').remove();
-                    $('input[name^="nameKey"]').remove();
-                }
-            });
-            $('#txtPermisoEdit').attr('value', data.permiso);
-            $('#txtKeyEdit').attr('value', data.key);
-            $('#id').attr('value', data.id_permiso);
-            $('<input type="hidden" name="namePermiso" value="' + data.permiso + '" />').insertAfter('#id');
-            $('<input type="hidden" name="nameKey" value="' + data.key + '" />').insertBefore('#editPermiso');
-        }, 'json');
-        return false;
+
+    // Cuando presionamos el botón para agregar permiso nos muestra la ventana modal
+    $("#addPermiso").on("click", function(ev) {
+        ev.preventDefault();
+        $("#addPermisoModal").modal();
+        $('#addPermisoModal').on('show', function() {
+            $(":input[name='txtPermiso']").val('');
+            $(":input[name='txtKey']").val('');
+            $("label[for='txtPermiso'][class='text-error']").remove();
+            $("label[for='txtKey'][class='text-error']").remove();
+        })
     });
-  
-    // Cargarmos el div que nos mostrará el modal para agregar un permiso
-    $('#addPermiso').live('click', function(){
-        $('#error').hide();
-        $('#exito').hide();
-        $('#modal_frmPermiso').dialog({
-            modal    :   true,
-            minWidth :   620,
-            minHeight:   150,
-            title    :   'Agregar Permiso',
-            show     :   'slide',
-            hide     :   'slide',
-            resizable:   false,
-            open     :   function(){
-                $('div[id$="Failed"]').addClass('hidden');
+
+    var permValido = false;
+    var keyValido = false;
+    //Validar si permiso ya esta registrado
+    $.validator.addMethod("validatePermiso", function(value, element) {
+        $.ajax({
+            type: "POST",
+            url: _root_ + "acl/verifyPermiso",
+            data: {permiso: value},
+            success: function(data) {
+                permValido = (data == 'true') ? true : false;
+            }
+        });
+        return permValido;
+    }, 'Permiso ya existe');
+    
+    //Validar si permiso ya esta registrado
+    $.validator.addMethod("validateKey", function(value, element) {
+        $.ajax({
+            type: "POST",
+            url: _root_ + "acl/verifyKey",
+            data: {key: value},
+            success: function(data) {
+                keyValido = (data == 'true') ? true : false;
+            }
+        });
+        return keyValido;
+    }, 'Key ya existe');
+
+    $("#frmAddPermiso").validate({
+        debug: true,
+        rules: {
+            txtPermiso: {
+                validatePermiso: true,
+                required: true,
+            },
+            txtKey: {
+                validateKey: true,
+                required: true
+            }
+        },
+        errorClass: "text-error",
+        submitHandler: function(form) {
+            $('#addPermisoModal').modal('hide');
+            form.submit();
+        }
+    });
+
+    $("#frmEditPermiso").validate({
+        debug: true,
+        errorClass: "text-error",
+        submitHandler: function(form) {
+            $('#editPermisoModal').modal('hide');
+            form.submit();
+        }
+    });
+    
+    /**
+     * Abrimos ventana modal para la edición de role seleccionado
+     */
+    $(".editPermiso").on("click", function(ev) {
+        ev.preventDefault();
+        var $id = $(this).data('permisoid');
+        $.post(_root_ + 'acl/getPermiso', {"id": $id}, function(data) {
+            $(":input[name='txtEditPermiso']").val(data['permiso']);
+            $(":input[name='txtEditKey']").val(data['key']);
+            $(":input[name='permisoID']").val('');
+            $(":input[name='permisoID']").val(data['id_permiso']);
+            $(":input[name='hd_permiso']").val(data['permiso']);
+            $(":input[name='hd_key']").val(data['key']);
+            $("label[for='txtEditPermiso'][class='text-error']").remove();
+            $("#editPermisoModal").modal();
+        }, "json");
+    });
+    
+    $("body").on("click", '.delPermiso', function(ev) {
+        ev.preventDefault();
+        var $permiso = $(this).data('permiso');
+        var $permisoID = $(this).data('permisoid');
+        jConfirm('¿Está seguro que desea eliminar el registro ' + $permiso + '?', 'Eliminación de registro', function(r) {
+            if (r == true) {
+                $.post(_root_ + 'acl/deletePermiso', {"id": $permisoID}, function(data) {
+                    if (data == '1') {
+                        jConfirm('Se elimin&oacute; correctamente el registro', 'Aviso', function(r) {
+                            if (r == true) {
+                                window.location = _root_ + 'acl/permisos';
+                            }
+                        });
+                    } else {
+                        jConfirm('No se pudo eliminar el registro, por favor verifique', 'Aviso', function(r) {
+                            if (r == true) {
+                                window.location = _root_ + 'acl/permisos';
+                            }
+                        });
+                    }
+                });
             }
         });
     });
-    
-    // Cambiamos el estilo de los input cuando tienen el focus
-    $(':input').focus(function(){
-        $(this).css('border', '1px dotted #666');
-    })
-        
-    // Realizamos el submit a través del botoón insertPermiso
-    $('#insertPermiso').live('click', function() {
-        $('#frmPermiso').submit();
-        $('#modal_frmPermiso').dialog("close");
-    });
-    
-    // Realizamos el submit a través del botón editUser
-    $('#editPermiso').live('click', function() {
-        $('#frmEditPermiso').submit();
-        $('#modal_frmPermisoEdit').dialog("close");
-    });
-    
-    $('#loading').hide();
-    
-    $('#loading img').ajaxStart(function(){
-        $(this).show();
-    }).ajaxStop(function(){
-        $(this).hide();
-    });
-    
-    // Enviamos los datos a través del plugin jquery.form para agregar un nuevo usuario
-    var options = { 
-        target      :   '.informe', // elemento destino que se actualizará 
-        beforeSubmit:   showRequest,  //  respuesta antes de llamar pre-submit callback 
-        success     :   showResponse  //  respuesta después de llamar 
-    }; 
- 
-    // vincular formulario usando 'ajaxForm' 
-    $('#frmPermiso').ajaxForm(options);
-    $('#frmEditPermiso').ajaxForm(options);
-})
 
-// respuesta antes de envío 
-function showRequest(formData, jqForm) { 
-    var extra = [ {
-        name: 'ajax', 
-        value: '1'
-    }];
-    $.merge(formData, extra)
- 
-    return true;  
-} 
- 
-// respuesta después de envío 
-function showResponse(responseText, statusText)  { 
-    if (responseText == 'Se ingres&oacute; correctamente el permiso' || responseText == 'Se edit&oacute; correctamente el permiso'){
-        window.location = getBaseURL() + "acl/permisos";
-        $('#exito').show();
-        $('#error').hide();
-        $('#frmPermiso').resetForm();
-    }
-    else {
-        $('#error').show();
-        $('#exito').hide();
-    }
-} 
-
-// Función que preguntará de estar seguro de eliminar un registro
-function deleteRow(registro,  id){
-    jConfirm('¿Está seguro que desea eliminar el registro '+registro+'?', 'Eliminación de registro', function(r) {
-        if(r == true){
-            $.ajax({
-                type    :   "POST",
-                url     :   getBaseURL() + "acl/deletePermiso",
-                data    :   "id="+id,
-                success :   function(msg){
-                    if(msg == '0'){
-                        $('#error').text('No se pudo eliminar el registro').show();
-                        window.location = getBaseURL() + "acl/permisos";
-                    }else if(msg == '1'){
-                        $('#exito').text('El registro se elimino correctamente').show();
-                        window.location = getBaseURL() + "acl/permisos";
-                    }
-                }
-            });
-        }
+    $("#delPermisos").on('click', function(ev) {
+        ev.preventDefault();
+        jConfirm('¿Está seguro que desea eliminar los registros seleccionados?', 'Eliminación de registros', function(r) {
+            if (r == true) {
+                $("#frmPermisos").submit();
+            }
+        });
     });
-}
+});

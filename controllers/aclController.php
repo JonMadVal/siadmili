@@ -64,11 +64,12 @@ class aclController extends Controller
                     $this->_view->assign('_roles', $roles);
                 }
             }
+            $this->_view->setCssPublic(array('jquery.alerts'));
             $this->_view->setJs(array('funciones'));
+            $this->_view->setJsPlugin(array('jquery.alerts'));
             $this->_view->assign('_validation', 'TRUE');
             $this->_view->assign('titulo', APP_NAME . ' - Administraci&oacute;n de Roles');
-            $this->_view->assign('menu_left_active', 'role');            
-            $this->_view->renderizar('index');
+            $this->_view->renderizar('index', FALSE, 'role');
         }
     }
 
@@ -144,11 +145,12 @@ class aclController extends Controller
             $this->_view->assign('titulo', APP_NAME . ' - Administraci&oacute;n de Permisos de Role');
             $this->_view->assign('roleID', $id);
             $this->_view->assign('role', $row);
-            $this->_view->assign('menu_left_active', 'role');
             $this->_view->assign('permisos', $this->_paginador->paginar($this->_aclm->getPermisosRole($id), $pagina));
             $this->_view->assign('paginacion', $this->_paginador->getView('paginador', 'acl/permisosRole/' . $id));
+            $this->_view->setCssPublic(array('jquery.alerts'));
             $this->_view->setJs(array('fnPermisosRole'));
-            $this->_view->renderizar('permisosRole');
+            $this->_view->setJsPlugin(array('jquery.alerts'));
+            $this->_view->renderizar('permisosRole', FALSE, 'role');
         }
     }
 
@@ -157,7 +159,7 @@ class aclController extends Controller
      */
     public function verifyExistRole() 
     {
-        if ($this->_aclm->getRoleByUsername($this->getAlphaNum('role'))) {
+        if ($this->_aclm->getRoleByUsername($this->getSql('role'))) {
             $valid = 'true';
         } else {
             $valid = 'false';
@@ -182,16 +184,16 @@ class aclController extends Controller
     }
 
     /**
-     * Eliminar de la base de datos un role específico a través de ajax.
+     * Eliminar de la base de datos uno más roles.
      *
-     * @param int $_POST['roleID']
-     *   Id del role a eliminar.
+     * @param array $_POST['idRole']
+     *   Array con los Id de o los roles a eliminar.
      *
      * @return
      *   Nos redirige al método index enviando un mensaje de acuerdo a si se eliminó o no 
      *   el registro.
      */
-    public function deleteRole() 
+    public function deleteRoles() 
     {
         if (isset($_POST['idRole']) && count($_POST['idRole']) > 0) {
             $errores = array();
@@ -206,17 +208,30 @@ class aclController extends Controller
             }
             $this->_view->assign('_errores', $errores);
             $this->_view->assign('_exitos', $exitos);
-        } else if ($this->getInt('roleID')) {
-                $result = $this->_aclm->deleteRole($this->getInt('roleID'));
-                if ($result == NULL) {
-                    $this->_view->assign('_error', 'No se pudo eliminar el role. Por favor vuelva a intentarlo.');
-                } else {
-                    $this->_view->assign('_exito', 'Se elimin&oacute; el role.');
-                }
         } else {
             $this->_view->assign('_error', 'No ha seleccionado role a eliminar.');
-        } 
+        }
         $this->index();
+    }
+    
+    /**
+     * Eliminar un role específico
+     * 
+     * @param int $id Este parámetro es enviado vía ajax y contiene el ID del role a eliminar
+     * 
+     * @return str Devuelve un string 0 si no se eliminó o 1 si lo realizó. Esto se devuelve a la 
+     * función ajax.
+     */
+    public function deleteRole() 
+    {
+        if ($this->getInt('id')) {   
+            $result = $this->_aclm->deleteRole($this->getInt('id'));
+            if ($result == NULL) {
+                echo '0';
+            } else {
+                echo '1';
+            }
+        }
     }
 
     /**
@@ -235,129 +250,162 @@ class aclController extends Controller
             exit;
         } else {
             if (!$this->filtrarInt($pagina)) {
-                $pagina = FALSE;
+                $pagina = false;
             } else {
                 $pagina = (int) $pagina;
             }
-            $paginador = new Paginador();
-            $result = $this->_acl->getPermisos();
-            $limite = '10';
-            $this->_view->assign('permisos', $paginador->paginar($result, $pagina, $limite));
-            $this->_view->assign('paginacion', $paginador->getView('paginador', 'acl/permisos'));
+            
+            if ($this->getInt('grabar') && $this->getInt('grabar') == "1") {     
+                if ($this->getTexto('txtPermiso')) {
+                    if ($this->_aclm->verifyPermiso($this->getSql('txtPermiso'))) {
+                        if ($this->getTexto('txtKey')) {
+                            if ($this->_aclm->verifyKey($this->getSql('txtKey'))) {
+                                if (!$this->_aclm->insertPermiso($this->getSql('txtPermiso'), $this->getSql('txtKey'))) {
+                                    $this->_view->assign('_error', 'No se pudo agregar el nuevo permiso. Por favor verifique los datos.');                    
+                                } else {
+                                    $this->_view->assign('_exito', 'Se agreg&oacute; el nuevo permiso correctamente..');      
+                                }
+                            } else {
+                                $this->_view->assign('_error', 'La clave ingresada ya existe.');
+                            }
+                        } else {
+                            $this->_view->assign('_error', 'No ha ingresado la clave del permiso.');
+                        }
+                    } else {
+                        $this->_view->assign('_error', 'El permiso ingresado ya existe.');
+                    }
+                } else {
+                    $this->_view->assign('_error', 'No ha ingresado el nombre del permiso.');
+                }
+            }
+            
+            if ($this->getInt('grabar') && $this->getInt('grabar') == "2") {
+                if ($this->getTexto('txtEditPermiso')) {
+                    if ($this->getTexto('txtEditPermiso') == $this->getTexto('hd_permiso')) {
+                        if ($this->getTexto('txtEditKey')) {
+                            if ($this->getTexto('txtEditKey') == $this->getTexto('hd_key')) {
+                                if (!$this->_aclm->editPermiso($this->getSql('txtEditPermiso'), $this->getSql('txtEditKey'), $this->getInt('permisoID'))) {
+                                    $this->_view->assign('_error', 'No se pudo editar el permiso. Por favor verifique los datos.');                    
+                                } else {
+                                    $this->_view->assign('_exito', 'Se edit&oacute; el permiso correctamente..');      
+                                }
+                            } else {
+                                if (!$this->_aclm->verifyKey($this->getSql('txtEditKey'))) {
+                                    $this->_view->assign('_error', 'La clave ingresado ya existe.');
+                                } else {
+                                    if (!$this->_aclm->editPermiso($this->getSql('txtEditPermiso'), $this->getSql('txtEditKey'), $this->getInt('permisoID'))) {
+                                        $this->_view->assign('_error', 'No se pudo editar el permiso. Por favor verifique los datos.');                    
+                                    } else {
+                                        $this->_view->assign('_exito', 'Se edit&oacute; el permiso correctamente..');      
+                                    }
+                                }
+                            }
+                        } else {
+                            $this->_view->assign('_error', 'No ha ingresado la clave del permiso.');
+                        }
+                    } else {
+                        if (!$this->_aclm->verifyPermiso($this->getSql('txtEditPermiso'))) {
+                            $this->_view->assign('_error', 'El permiso ingresado ya existe.');    
+                        } else {
+                            if (!$this->_aclm->editPermiso($this->getSql('txtEditPermiso'), $this->getSql('txtEditKey'), $this->getInt('permisoID'))) {
+                                $this->_view->assign('_error', 'No se pudo editar el permiso. Por favor verifique los datos.');                    
+                            } else {
+                                $this->_view->assign('_exito', 'Se edit&oacute; el permiso correctamente..');      
+                            }
+                        }
+                    }
+                } else {
+                    $this->_view->assign('_error', 'No ha ingresado el nombre del permiso.');     
+                }
+            }
+            
+            $permisos = $this->_aclm->getPermisos();
+            if (count($permisos) && is_array($permisos)) {
+                if (count($permisos) > 10) {
+                    $this->_view->assign('_permisos', $this->_paginador->paginar($permisos, $pagina));
+                    $this->_view->assign('paginacion', $this->_paginador->getView('paginador', 'acl/permisos'));
+                } else {
+                    $this->_view->assign('_permisos', $permisos);
+                }
+            }
+            $this->_view->setCssPublic(array('jquery.alerts'));
             $this->_view->setJs(array('fnPermisos'));
-            $this->_view->setCssPublic(array('jquery.alerts', 'ui-darkness/jquery-ui-1.8.18.custom'));
-            $this->_view->setJsPublic(array('funciones', 'clockp', 'clockh', 'jquery-ui-1.8.18.custom.min', 'jquery.alerts', 'jquery.form'));
-            $this->_view->assign('titulo', APP_NAME . ' - Listas de Acceso');
-            $this->_view->renderizar('permisos');
+            $this->_view->setJsPlugin(array('jquery.alerts'));
+            $this->_view->assign('_validation', 'TRUE');
+            $this->_view->assign('titulo', APP_NAME . ' - Administraci&oacute;n de Permisos');
+            $this->_view->renderizar('permisos', FALSE, 'permiso');
         }
     }
-
+    
     /**
-     * Guardar un nuevo permiso o editar permiso existente.
-     *
-     * @param int Spagina
-     *  Número de página a listar.
-     *
-     * @return
-     *   Carga la vista con los permisos disponibles.
+     * Método que a través del permiso enviado vía ajax permitirá validar si el permiso a añadir existe o no.
      */
-    public function setPermiso() 
+    public function verifyPermiso() 
     {
-        if (isset($_POST['optEdit']) && $_POST['optEdit'] == '1') {
-            // Verificamos el txtPermisoEdit tenga dato y que no este registrado
-            if (!$this->getPostParam('txtPermisoEdit')) {
-                echo 'Debe introducir el nombre del permiso.<br />';
-                exit;
-            } else {
-                if ($this->getPostParam('txtPermisoEdit') != $this->getPostParam('namePermiso')) {
-                    if (!$this->_acl->getPermisoByUsername($this->getPostParam('txtPermisoEdit'))) {
-                        echo 'El permiso ingresado ya esta registrado.<br />';
-                        exit;
-                    }
-                }
-            }
-
-            // Verificamos el txtKeyEdit tenga dato y que no este registrado
-            if (!$this->getPostParam('txtKeyEdit')) {
-                echo 'Debe introducir el key del permiso.<br />';
-                exit;
-            } else {
-                if ($this->getPostParam('txtKeyEdit') != $this->getPostParam('nameKey')) {
-                    if (!$this->_acl->verifyKeyExist($this->getPostParam('txtKeyEdit'))) {
-                        echo 'El key ingresado ya esta registrado.<br />';
-                        exit;
-                    }
-                }
-            }
-            $r = $this->_acl->editPermisoById($this->getPostParam('txtPermisoEdit'), $this->getPostParam('txtKeyEdit'), $this->filtrarInt('id'));
-            if ($r) {
-                echo 'Se edit&oacute; correctamente el permiso';
-                exit;
-            } else {
-                echo 'Verifique que los datos ingresados sean correctos';
-                exit;
-            }
+        if ($this->_aclm->verifyPermiso($this->getSql('permiso'))) {
+            $valid = 'true';
         } else {
-            if (!$this->getPostParam('txtPermiso')) {
-                echo 'Debe introducir el nombre del permiso.<br />';
-                exit;
-            }
-            if (!$this->getPostParam('txtKey')) {
-                echo 'Debe introducir el key del permiso.<br />';
-                exit;
-            }
-            $r = $this->_acl->insertPermiso($this->getPostParam('txtPermiso'), $this->getPostParam('txtKey'));
-            if ($r) {
-                echo 'Se ingres&oacute; correctamente el permiso';
-                exit;
-            } else {
-                echo 'Verifique que los datos ingresado son correctos';
-                exit;
-            }
+            $valid = 'false';
         }
+        echo $valid;
     }
-
+    
     /**
-     * Cargar los datos del permiso para editar
-     *
-     * @param int $_POST['id']
-     *   Id del permiso a editar.
-     *
-     * @return
-     *   Mostramos a través de Json los datos del permiso a editar.
+     * Validamos si el key ingresado existe ya en la base de datos
      */
-    public function editPermiso() 
+    public function verifyKey()
     {
-        $id = $this->filtrarInt($_POST['id']);
-        $result = $this->_acl->getPermisoById($id);
-        if (!$result) {
-            exit;
+        if ($this->_aclm->verifyKey($this->getSql('key'))) {
+            $valid = 'true';
+        } else {
+            $valid = ' false';
         }
-        if (is_array($result)) {
-            foreach ($result as $perm) {
-                echo json_encode($perm);
-            }
-        }
+        echo $valid;
     }
-
+    
     /**
-     * Eliminar de la base de datos un permiso específico a través de ajax.
-     *
-     * @param int $_POST['id']
-     *   Id del permiso a eliminar.
-     *
-     * @return
-     *   Mostrará 0 en caso falle o 1 en caso se haya eliminado.
+     * Obtenemos vía ajax los datos de un permiso específico
+     */
+    public function getPermiso() 
+    {
+        $id = $this->getInt('id');
+        $result = $this->_aclm->getPermisoById($id) ;
+        echo json_encode($result);
+    }
+    
+    /**
+     * Eliminar vía ajax un registro
      */
     public function deletePermiso() 
     {
-        $id = $this->filtrarInt($_POST['id']);
-        $result = $this->_acl->deletePermiso($id);
-        if (!$result) {
-            echo '0';
-        } else {
-            echo '1';
+        if ($this->getInt('id')) {   
+            $result = $this->_aclm->deletePermiso($this->getInt('id'));
+            if ($result == NULL) {
+                echo '0';
+            } else {
+                echo '1';
+            }
         }
     }
-
+    
+    public function deletePermisos() 
+    {
+        if (isset($_POST['idPermiso']) && count($_POST['idPermiso']) > 0) {
+            $errores = array();
+            $exitos = array();
+            foreach ($_POST['idPermiso'] as $perm) {
+                $result = $this->_aclm->deletePermiso($perm);
+                if ($result == NULL) {
+                    $errores[] = 'No se pudo eliminar el permiso ' . $perm;
+                } else {
+                    $exitos[] = 'Se elimin&oacute; el permiso ' . $perm;
+                }
+            }
+            $this->_view->assign('_errores', $errores);
+            $this->_view->assign('_exitos', $exitos);
+        } else {
+            $this->_view->assign('_error', 'No ha seleccionado permiso a eliminar.');
+        }
+        $this->permisos();
+    }
 }

@@ -5,9 +5,9 @@ class aclWidget extends Widget
     {
     }
     
-    public function getAcl() 
+    public function getAcl($itemAcl) 
     {
-        $data['role'] = "role";
+        $data['itemAcl'] = $itemAcl;
         return $this->render('acl-main', $data);
     }
     

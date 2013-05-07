@@ -1,1 +1,2 @@
 <h2 class="text-center">Bienvenidos al Sistema de Administraci&oacute;n de Librer&iacute;a</h2> 
+<p class="text-center"><img src="{$_layoutParams.root}public/images/img_library.jpg" class="img-polaroid"></p>
