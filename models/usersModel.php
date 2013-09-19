@@ -8,7 +8,6 @@
 class usersModel extends Model 
 {
     private $_user;
-    private $_total;
 
     public function __construct() 
     {
@@ -46,7 +45,7 @@ class usersModel extends Model
         }
         $res->free();
         return $this->_user;*/
-        $sql = "SELECT `userID`, `login`, `role` FROM `users` "
+        $sql = "SELECT `userID`, `login`, `role`, `avatar`, `nombres` FROM `users` "
               ."WHERE `login` = ? AND `pass` = ?";
         $stmt = $this->_dbh->prepare($sql);
         $stmt->bindParam(1, $datos['username'], PDO::PARAM_STR);
@@ -72,22 +71,9 @@ class usersModel extends Model
         return $this->_user;
         $this->_dbh = null;
     }
-
+    
     /**
-     * Obtener el número total de usuarios registrados.
-     *
-     * @return
-     *   False en caso de error o string con número total de registros.
-     */
-    public function getTotalRow() 
-    {
-        $stmt = $this->_dbh->query("SELECT count(*) AS `Total` FROM `users`;");
-        $this->_total = $stmt->fetch();
-        return $this->_total;
-    }
-
-    /**
-     * Verificar que username se encuentra registrado.
+     * Verificar que username no se encuentre registrado.
      *
      * @param str $username
      *   Username a verificar.
@@ -95,14 +81,17 @@ class usersModel extends Model
      * @return
      *   False en caso se encuentre registrado o True en caso no lo esté.
      */
-    public function getUserByUsername($username) {
-        $sql = "SELECT userID, login "
-                . "FROM users WHERE login = '" . $username . "'; ";
-        $res = $this->_db->con()->query($sql);
-        if ($res->num_rows <= 0) {
-            return 1;  // Que usuario no esta en la base de datos
+    public function verifyUsername($username) 
+    {
+        $stmt = $this->_dbh->prepare("SELECT `userID` FROM `users` WHERE `login` = :username");
+        $stmt->bindParam(":username", $username, PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            return TRUE;
+        } else {
+            return FALSE;
         }
-        return 0;
+        $this->_dbh = NULL;
     }
 
     /**
@@ -114,63 +103,48 @@ class usersModel extends Model
      * @return
      *   False en caso se encuentre registrado o True en caso no lo esté.
      */
-    public function getUserByEmail($email) {
-        $sql = "SELECT userID, login, email "
-                . "FROM users WHERE email = '" . $email . "'; ";
-        $res = $this->_db->con()->query($sql);
-        if ($res->num_rows <= 0) {
-            return 1;
+    public function verifyEmail($email) 
+    {
+        $stmt = $this->_dbh->prepare("SELECT `userID` FROM `users` WHERE `email` = :email");
+        $stmt->bindParam(":email", $email, PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            return TRUE;
+        } else {
+            return FALSE;
         }
-        return 0;
+        $this->_dbh = NULL;
     }
 
     /**
      * Insertar nuevo usuario.
-     *
-     * @param str $login
-     *   Username del usuario.
-     *
-     * @param str $password
-     *   Password del usuario.
-     *
-     * @param str $name
-     *   Nombre del usuario.
      * 
-     * @param str $apaterno
-     *   Apellido paterno del usuario.
-     * 
-     * @param str $amaterno
-     *   Apellido materno del usuario.
-     *
-     * @param str $email
-     *   Email del usuario.
-     * 
-     * @param str $telefono
-     *   Teléfono del usuario.
-     * 
-     * @param str $avatar
-     *   Avatar del usuario.
-     * 
-     * @param str $role
-     *   Rol del usuario.
-     * 
-     * @param str $comments
-     *   Comentario del usuario.
+     * @param array $data
+     *   Array con los datos del usuarios a agregar.
      * 
      * @return
      *   False en caso de error o True en caso se registre el usuario.
      */
-    public function insertUser($login, $password, $name, $apaterno, $amaterno, $email, $telefono, $avatar, $role, $comments) {
-        $sql = sprintf(
-                "INSERT INTO users (login, pass, nombres, apaterno, amaterno, email, telefono, avatar, role, Comentario) "
-                . "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ;", parent::comillas_inteligentes($login), parent::comillas_inteligentes($password), parent::comillas_inteligentes($name), parent::comillas_inteligentes($apaterno), parent::comillas_inteligentes($amaterno), parent::comillas_inteligentes($email), parent::comillas_inteligentes($telefono), parent::comillas_inteligentes($avatar), parent::comillas_inteligentes($role), parent::comillas_inteligentes($comments)
-        );
-
-        $res = $this->_db->con()->query($sql);
-        if (!$res) {
+    public function addUser($data) 
+    {
+        $stmt = $this->_dbh->prepare("INSERT INTO `users` (`login`, `pass`, `nombres`, `apaterno`, `amaterno`, `email`, `telefono`, `role`, `Comentario`, `fec_modificacion`) "
+                ." VALUES (:username, :pass, :nombres, :apaterno, :amaterno, :email, :telefono, :role, :comentario, now())");
+        $stmt->bindParam(':username', $data['username'], PDO::PARAM_STR);
+        $stmt->bindParam(':pass', $data['pass'], PDO::PARAM_STR);
+        $stmt->bindParam(':nombres', $data['nombres'], PDO::PARAM_STR);
+        $stmt->bindParam(':apaterno', $data['apaterno'], PDO::PARAM_STR);
+        $stmt->bindParam(':amaterno', $data['amaterno'], PDO::PARAM_STR);
+        $stmt->bindParam(':email', $data['email'], PDO::PARAM_STR);
+        $stmt->bindParam(':telefono', $data['telefono'], PDO::PARAM_STR);
+        $stmt->bindParam(':role', $data['role'], PDO::PARAM_INT);
+        $stmt->bindParam(':comentario', $data['comentario'], PDO::PARAM_STR);
+        
+        if ($stmt->execute()) {
+            return TRUE;
+        } else {
             return FALSE;
         }
-        return TRUE;
+        $this->_dbh = NULL;
     }
 
     /**
@@ -184,8 +158,9 @@ class usersModel extends Model
      */
     public function getUserById($id) 
     {
-        $stmt = $this->_dbh->prepare("SELECT u.userID, u.login, u.nombres, u.apaterno, u.amaterno, u.email, u.telefono, u.role, u.avatar, "
-                ."u.Comentario, r.role FROM users u, roles r WHERE u.role = r.roleID AND userID = :id");
+        $id = (int) $id;
+        $stmt = $this->_dbh->prepare("SELECT `u`.`userID`, `u`.`login`, `u`.`nombres`, `u`.`apaterno`, `u`.`amaterno`, `u`.`email`, `u`.`telefono`, `u`.`avatar`, `r`.`roleID`, `r`.`role`, `u`.`Comentario` "
+                ."FROM `users` as `u`, `roles` as `r` WHERE `u`.`role` = `r`.`roleID` AND `u`.`userID` = :id");
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         $this->_user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -195,56 +170,51 @@ class usersModel extends Model
 
     /**
      * Editar usuario.
-     *
-     * @param str $name
-     *   Nombre del usuario. 
      * 
-     * @param str $apaterno
-     *   Apellido paterno del usuario.
-     * 
-     * @param str $amaterno
-     *   Apellido materno del usuario.
-     *
-     * @param str $email
-     *   Email del usuario.
-     * 
-     * @param str $telefono
-     *   Teléfono del usuario.
-     * 
-     * @param str $avatar
-     *   Avatar del usuario.
-     * 
-     * @param str $login
-     *   Username del usuario.
-     * 
-     * @param str $role
-     *   Rol del usuario.
-     * 
-     * @param str $comments
-     *   Comentario del usuario.
-     * 
-     * @param int $id
-     *   Id del usuario a editar.
+     * @param array $data
+     *   Array con los datos del usuarios a editar.
      * 
      * @return
-     *   False en caso de error o True en caso se edite el usuario.
+     *   False en caso de error o True en caso se registre el usuario.
      */
-    public function editUserById($name, $apaterno, $amaterno, $email, $telefono, $avatar, $login, $role, $comments, $id) {
-        $sql = sprintf(
-                "UPDATE users "
-                . "SET login = %s, nombres = %s, apaterno = %s, amaterno = %s, email = %s, telefono = %s, avatar = %s, role = %s, Comentario = %s "
-                . "WHERE userID = %s", parent::comillas_inteligentes($login), parent::comillas_inteligentes($name), parent::comillas_inteligentes($apaterno), parent::comillas_inteligentes($amaterno), parent::comillas_inteligentes($email), parent::comillas_inteligentes($telefono), parent::comillas_inteligentes($avatar), parent::comillas_inteligentes($role), parent::comillas_inteligentes($comments), parent::comillas_inteligentes($id)
-        );
-
-        $res = $this->_db->con()->query($sql);
-        if (!$res) {
+    public function editUser($data) 
+    {
+        if (isset($data['avatar'])) {
+            $avatar = $data['avatar'];
+        } else {
+            $avatar = 'avatar.png';
+        }
+        
+        if (isset($data['pass'])) {
+            $stmt = $this->_dbh->prepare("UPDATE `users` SET `login` = :username, `pass` = :pass, `nombres` = :nombres, `apaterno` = :apaterno, `amaterno` = :amaterno, `email` = :email, `telefono` = :telefono, `avatar` = :avatar, `role` = :role, `Comentario` = :comentario, `fec_modificacion` = now() "
+                ."WHERE `userID` = :userID");
+            $stmt->bindParam(':pass', $data['pass'], PDO::PARAM_STR);
+        } else {
+            $stmt = $this->_dbh->prepare("UPDATE `users` SET `login` = :username, `nombres` = :nombres, `apaterno` = :apaterno, `amaterno` = :amaterno, `email` = :email, `telefono` = :telefono, `avatar` = :avatar, `role` = :role, `Comentario` = :comentario, `fec_modificacion` = now() "
+                ."WHERE `userID` = :userID");
+        }
+        
+        $stmt->bindParam(':username', $data['username'], PDO::PARAM_STR);
+        $stmt->bindParam(':nombres', $data['nombres'], PDO::PARAM_STR);
+        $stmt->bindParam(':apaterno', $data['apaterno'], PDO::PARAM_STR);
+        $stmt->bindParam(':amaterno', $data['amaterno'], PDO::PARAM_STR);
+        $stmt->bindParam(':email', $data['email'], PDO::PARAM_STR);
+        $stmt->bindParam(':telefono', $data['telefono'], PDO::PARAM_STR);
+        $stmt->bindParam(':avatar', $avatar, PDO::PARAM_STR);
+        $stmt->bindParam(':role', $data['role'], PDO::PARAM_INT);
+        $stmt->bindParam(':userID', $data['userID'], PDO::PARAM_INT);
+        $stmt->bindParam(':comentario', $data['comentario'], PDO::PARAM_STR);
+        
+        if ($stmt->execute()) {
+            return TRUE;
+        } else {
             return FALSE;
         }
-        return TRUE;
+        $this->_dbh = NULL;
     }
 
     /**
-     * Eliminar a un usuario específico.
+     * Eliminar usuario específico.
      *
      * @param int $id
      *   Id del usuario.
@@ -252,16 +222,15 @@ class usersModel extends Model
      * @return
      *   False en caso de error o True en caso se elimine el usuario.
      */
-    public function deleteUser($id) {
-        $sql = sprintf(
-                "DELETE FROM users "
-                . "WHERE userID = %s", parent::comillas_inteligentes($id)
-        );
-        $res = $this->_db->con()->query($sql);
-        if (!$res) {
-            return FALSE;
-        }
-        return TRUE;
+    public function deleteUser($id) 
+    {
+        $result = NULL;
+        $id = (int) $id;
+        $stmt = $this->_dbh->prepare("DELETE FROM `users` WHERE `userID` = :userID");
+        $stmt->bindParam(':userID', $id, PDO::PARAM_INT);
+        $result = $stmt->execute();
+        return $result;
+        $this->_dbh = NULL;
     }
 
     /**

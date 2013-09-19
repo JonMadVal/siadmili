@@ -30,7 +30,7 @@
                 </tbody>
             </table>  
         {/if}
-        <p><button class="btn btn-primary" type="submit">Guardar</button></p>
+        {if ($_acl->permiso('edit_perm'))}<p><button class="btn btn-primary" type="submit">Guardar</button></p>{/if}
     </form> 
     {if isset($paginacion)}
         <div class="pagination">

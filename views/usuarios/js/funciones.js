@@ -1,4 +1,5 @@
 $(document).on("ready", function() {
+    // Función que en base a parámetros nos cargará la información a mostrar
     var loadData = function(pagina) {
         var datos = {page: pagina,
             nombre: $(":input[name='txtNombre']").val(),
@@ -11,10 +12,15 @@ $(document).on("ready", function() {
             data: datos
         }).done(function(msg) {
             $("#grid").html('');
-            $("#grid").html(msg);
+            if (msg != '') {
+                $("#grid").html(msg);
+            } else {
+                $("#grid").html("<h4 class='text-info text-center'>No se encontr&oacute; registros.</h4>");
+            }
         });
     }
 
+    // Nos mostrará los usuarios de acuerdo a la página seleccionada
     $("body").on("click", ".pagina", function(ev) {
         ev.preventDefault();
         var page = $(this).data('page');
@@ -40,161 +46,156 @@ $(document).on("ready", function() {
         loadData();
     });
 
+    // Cuando vayamos ingresando nuestros texto de búsqueda nos irá mostrando el resultado
     $("#txtNombre, #txtApaterno, #txtAmaterno").keyup(function() {
         loadData();
     });
 
+    // Indicamos que cantidad de registros queremos ir mostrando
     $("body").on('change', "#registros", function(ev) {
         ev.preventDefault();
         loadData();
     });
+
+    // Cuando presionamos el botón para agregar usuario nos muestra la ventana modal
+    $("body").on("click", "#addUser", function(ev) {
+        ev.preventDefault();
+        $("#addUserModal").modal();
+        $('#addUserModal').on('show', function() {
+            // Reseteamos los campos del formulario al abrirse
+            $("#frmAddUser")[0].reset();
+            $("label[for^='txt'][class='text-error']").remove();
+        })
+    });
+
+    //Validar si username ya esta registrado
+    validateUsername = true;
+    validateEmail = true;
+    $.validator.addMethod("validateUsername", function(value, element) {
+        $.post(_root_ + "usuarios/verifyUsername", {username: value})
+                .done(function(data) {
+            validateUsername = (data == 'true') ? true : false;
+        });
+        return validateUsername;
+    }, 'Username ya se encuentra registrado.');
+
+    $.validator.addMethod("validateEmail", function(value, element) {
+        $.post(_root_ + "usuarios/verifyEmail", {email: value})
+                .done(function(data) {
+            validateEmail = (data == 'true') ? true : false;
+        });
+        return validateEmail;
+    }, 'Email ya se encuentra registrado.');
+
+    //Validar si se ha seleccionado el role
+    $.validator.addMethod("validateRole", function(value, element) {
+        var result = false;
+        if (value != "0") {
+            result = true;
+        }
+        return result;
+    }, 'Debe seleccionar el role del usuario.');
+
+    $("#frmAddUser").validate({
+        debug: true,
+        rules: {
+            txtUsername: {
+                validateUsername: true,
+            },
+            txtRePass: {
+                equalTo: "#txtPass",
+            },
+            txtEmail: {
+                validateEmail: true,
+            },
+            drdRole: {
+                validateRole: true,
+            }
+        },
+        errorClass: "text-error",
+        submitHandler: function(form) {
+            $('#addUserModal').modal('hide');
+            form.submit();
+        }
+    });
+
+    /**
+     * Abrimos ventana modal para la edición de usuario seleccionado
+     */
+    $("body").on("click", ".editUser", function(ev) {
+        ev.preventDefault();
+        var $userid = $(this).data('userid');
+        $.post(_root_ + 'usuarios/getUser', {"userid": $userid}, function(data) {
+            // Reseteamos los campos del formulario al abrirse
+            $("#frmEditUser")[0].reset();
+            $("label[for^='txt'][class='text-error']").remove();
+
+            $(":input[name='txtEditNombre']").val(data['nombres']);
+            $(":input[name='txtEditAPaterno']").val(data['apaterno']);
+            $(":input[name='txtEditAMaterno']").val(data['amaterno']);
+            $(":input[name='txtEditUsername']").val(data['login']);
+            $(":input[name='txtEditEmail']").val(data['email']);
+            $(":input[name='txtEditTel']").val(data['telefono']);
+            $("select[name='drdEditRole'] option[value=" + data.roleID + "]").prop("selected", true);
+            $(":input[name='txtEditComentario']").val(data['Comentario']);
+            $("input:hidden[name='hdUserId']").val(data.userID);
+            $("input:hidden[name='hdUsername']").val(data.login);
+            $("input:hidden[name='hdEmail']").val(data.email);
+            $("#editUserModal").modal();
+        }, "json");
+    });
+
+    $("#frmEditUser").validate({
+        debug: true,
+        rules: {            
+            drdEditRole: {
+                validateRole: true,
+            }
+        },
+        errorClass: "text-error",
+        submitHandler: function(form) {
+            $('#editUserModal').modal('hide');
+            form.submit();
+        }
+    });
+    
+    /**
+     * Eliminar un usuario determinado
+     */
+    $("body").on("click", '.delUser', function(ev) {
+        ev.preventDefault();
+        var $username = $(this).data('user');
+        var $userID = $(this).data('userid');
+        jConfirm('¿Está seguro que desea eliminar el registro ' + $username + '?', 'Eliminación de registro', function(r) {
+            if (r == true) {
+                $.post(_root_ + 'usuarios/deleteUser', {"id": $userID}, function(data) {
+                    if (data == '1') {
+                        jConfirm('Se elimin&oacute; correctamente el registro', 'Aviso', function(r) {
+                            if (r == true) {
+                                window.location = _root_ + 'usuarios';
+                            }
+                        });
+                    } else {
+                        jConfirm('No se pudo eliminar el registro, por favor verifique', 'Aviso', function(r) {
+                            if (r == true) {
+                                window.location = _root_ + 'usuarios';
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    /**
+     * Eliminar varios roles a la vez
+     */
+    $("#delUsers").on('click', function(ev) {
+        ev.preventDefault();
+        jConfirm('¿Está seguro que desea eliminar los registros seleccionados?', 'Eliminación de registros', function(r) {
+            if (r == true) {
+                $("#frmUsers").submit();
+            }
+        });
+    });
 });
-/* 
- // Hacemos que todos los div cuyo id empiecen por frm inicialmente no se muestren
- $('div[id^="frm"]').addClass('hidden');
- 
- // Todo div cuyo id terminen con Failed no se muestren inicialmente
- $('div[id $= "Failed"]').addClass('hidden');
- 
- // Ocultamos la caja donde se muestran los errores y de éxito
- $('#error').hide();
- $('#exito').hide();
- 
- 
- // Editar un usuario
- $('#dataUser').on('click', function() {
- $('#error').hide();
- $('#exito').hide();
- var id = $(this).attr('p');
- $.post(getBaseURL() + 'usuarios/editUser', {'id': id}, function(data) {
- $('#frm_editUser').dialog({
- modal: true,
- minWidth: 620,
- minHeight: 500,
- title: 'Editar Usuario',
- show: 'slide',
- hide: 'slide',
- resizable: false,
- open: function() {
- $('div[id$="Failed"]').addClass('hidden');
- $("input:file").val('');
- $('input[name^="hd"]').addClass('hidden');
- }
- });
- $('#nameEdit').attr('value', data.nombres);
- $('#apaternoEdit').attr('value', data.apaterno);
- $('#amaternoEdit').attr('value', data.amaterno);
- $('#loginEdit').attr('value', data.login);
- $('#emailEdit').attr('value', data.email);
- $('#telefonoEdit').attr('value', data.telefono);
- $('#avatarEdit').text('');
- $("select[id='levelEdit'] option[value=" + data.level + "]").attr("selected", true);
- $('#commentsEdit').text(data.Comentario);
- $('#id').val(id);
- $('#hdLogin').val(data.login);
- $('#hdEmail').val(data.email);
- $('#hdAvatar').val(data.avatar);
- }, 'json');
- return false;
- });
- 
- // Cargamos el div cuyo id addUser se muestre como modal
- $('#addUser').on('click', function() {
- $('#error').hide();
- $('#exito').hide();
- $('#frm_addUser').dialog({
- modal: true,
- minWidth: 620,
- minHeight: 500,
- title: 'Agregar nuevo usuario',
- show: 'slide',
- hide: 'slide',
- resizable: false,
- open: function() {
- $('div[id$="Failed"]').addClass('hidden');
- }
- });
- });
- 
- // Cambiamos el estilo de los input cuando tienen el focus
- $(':input').focus(function() {
- $(this).css('border', '1px dotted #666');
- })
- 
- // Realizamos el submit a través del botón insertUser
- $('#insertUser').on('click', function() {
- $('#frmAddUser').submit();
- $('#frm_addUser').dialog("close");
- });
- 
- // Realizamos el submit a través del botón editUser
- /*$('#editUser').live('click', function() {
- $('#frmEditUser').submit();
- $('#frm_editUser').dialog("close");
- });
- 
- $('#loading').hide();
- 
- $('#loading img').ajaxStart(function() {
- $(this).show();
- }).ajaxStop(function() {
- $(this).hide();
- });
- 
- // Enviamos los datos a través del plugin jquery.form para agregar un nuevo usuario
- var options = {
- target: '.informe', // elemento destino que se actualizará 
- beforeSubmit: showRequest, //  respuesta antes de llamarpre-submit callback 
- success: showResponse  //  respuesta después de llamar 
- };
- 
- // vincular formulario usando 'ajaxForm' 
- //$('#frmAddUser').ajaxForm(options); 
- //$('#frmEditUser').ajaxForm(options);
- })
- 
- // respuesta antes de envío 
- function showRequest(formData, jqForm) {
- var extra = [{
- name: 'ajax',
- value: '1'
- }];
- $.merge(formData, extra)
- 
- return true;
- }
- 
- // respuesta después de envío 
- function showResponse(responseText, statusText) {
- if (responseText == 'Se ingres&oacute; correctamente al nuevo usuario' || responseText == 'El usuario se edit&oacute; satisfactoriamente.') {
- $('#exito').show();
- $('#error').hide();
- $('#frmAddUser').resetForm();
- loadData(1);
- } else {
- $('#error').show();
- $('#exito').hide();
- }
- }
- 
- // Función que preguntará de estar seguro de eliminar un registro
- function deleteRow(registro, id) {
- jConfirm('¿Está seguro que desea eliminar el registro ' + registro + '?', 'Eliminación de registro', function(r) {
- if (r == true) {
- $.ajax({
- type: "POST",
- url: getBaseURL() + "usuarios/deleteUser",
- data: "id=" + id,
- success: function(msg) {
- if (msg == '0') {
- $('#error').text('No se pudo eliminar el registro').show();
- loadData(1);
- } else if (msg == '1') {
- $('#exito').text('El registro se elimino correctamente').show();
- loadData(1);
- }
- }
- });
- }
- });
- }*/

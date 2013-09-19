@@ -139,10 +139,10 @@ class Session
      * @throws Exception
      */
     public static function tiempo() {
-        if (!Session::get('tiempo') || !define('SESSION_TIME')) {
+        if (!Session::get('tiempo') || !defined('SESSION_TIME')) {
             throw new Exception('No se ha definido el tiempo de sesion');
         }
-
+        
         // Definimos tiempo de sesión indefinido
         if (SESSION_TIME == 0) {
             return;

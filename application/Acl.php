@@ -37,6 +37,13 @@ class ACL
     public function compilarAcl() 
     {
         $this->_permisos = array_merge($this->_permisos, $this->getPermisosUsuario());
+        // Obtener una lista de columnas
+        if (count($this->_permisos)) {
+            foreach ($this->_permisos as $key => $row) {
+                $permiso[$key]  = $row['permiso'];
+            }
+            array_multisort($permiso, SORT_ASC, $this->_permisos);
+        }        
     }
 
     /* Obtenemos el role del usuario */
@@ -171,12 +178,11 @@ class ACL
     // Método para utilizar en los controladores para tomar decisión sobre si tiene permiso o no
     public function acceso($key) 
     {
-        if ($this->_permisos[$key]) {
+        if (isset($this->_permisos[$key]) && $this->_permisos[$key] && $this->_permisos[$key]['valor']) {
             Session::tiempo();
             return;
         }
         header('Location: ' . BASE_URL . 'error/access/5050');
         exit;
     }
-
 }

@@ -1,172 +1,159 @@
-function loadData(page){
-  //loading_show();
-  $.ajax({
-    type    :   "POST",
-    url     :   getBaseURL() + "categories/displayCategories",
-    data    :   "page="+page,
-    success :   function(msg){
-      $("#grid").ajaxComplete(function(event, request, settings){
-        //loading_hide();
-        $("#grid").html(msg);
-      });
+$(document).on("ready", function() {
+    // Función que en base a parámetros nos cargará la información a mostrar
+    var loadData = function(pagina) {
+        var datos = {page: pagina,
+            category: $(":input[name='txtCategory']").val(),
+            registros: $("#registros").val()};
+        $.ajax({
+            type: "POST",
+            url: _root_ + "categories/displayCategories",
+            data: datos
+        }).done(function(msg) {
+            $("#grid").html('');
+            if (msg != '') {
+                $("#grid").html(msg);
+            } else {
+                $("#grid").html("<h4 class='text-info text-center'>No se encontr&oacute; registros.</h4>");
+            }
+        });
     }
-  });
-}
 
-$(document).ready(function(){
-  // Otorgamos al primer input el focus
-  $(":input:first").focus();
-        
-  loadData(1); // La primera página de resultados
-  $('#grid .pagination li.active').live('click',function(){
-    var page = $(this).attr('p');
-    loadData(page);
-  }); 
-    
-  $('#go_btn').live('click',function(){
-    var page = parseInt($('.goto').val());
-    var no_of_pages = parseInt($('.total').attr('a'));
-    if(page != 0 && page <= no_of_pages){
-      loadData(page);
-    }else{
-      jAlert('Ingrese una p&aacute;gina entre 1 y '+no_of_pages, 'Advertencia');
-      $('.goto').val("").focus();
-      return false;
-    }                    
-  });
-    
-  // Hacemos que todos los div cuyo id empiecen por frm inicialmente no se muestren
-  $('div[id^="frm"]').addClass('hidden');
-    
-  // Todo div cuyo id terminen con Failed no se muestren inicialmente
-  $('div[id $= "Failed"]').addClass('hidden');
-    
-  // Ocultamos la caja donde se muestran los errores y de éxito
-  $('#error').hide();
-  $('#exito').hide();
-    
-  // Editar un usuario
-  $('.editCat').live('click', function(){
-    $('#error').hide();
-    $('#exito').hide();
-    var id = $(this).attr('p');
-    $.post(getBaseURL()+'categories/editCategory', {'id': id}, function(data) {
-      $('#frm_editCategories').dialog({
-        modal    :   true,
-        minWidth :   615,
-        minHeight:   150,
-        title    :   'Editar Categor&iacute;a',
-        show     :   'slide',
-        hide     :   'slide',
-        resizable:   false,
-        open     :   function(){
-          $('div[id$="Failed"]').addClass('hidden');
-          $('input[name^="hd"]').remove();
-        }
-      });
-        $('#txtCategoryEdit').attr('value', data.catname);
-        $('#txtCategoryEdit').after('<input type="hidden" name="hdId" value="' + id + '" />');
-    }, 'json');
-  });
-        
-  // Cargamos el div cuyo id addUser se muestre como modal
-  $('#addCat').live('click', function(){
-    $('#error').hide();
-    $('#exito').hide();
-    $('#frm_addCategories').dialog({
-      modal    :   true,
-      minWidth :   615,
-      minHeight:   150,
-      title    :   'Agregar Categor&iacute;a',
-      show     :   'slide',
-      hide     :   'slide',
-      resizable:   false,
-      open     :   function(){
-        $('div[id$="Failed"]').addClass('hidden');
-        $('input[name^="hd"]').remove();
-      }
+    // Nos mostrará los usuarios de acuerdo a la página seleccionada
+    $("body").on("click", ".pagina", function(ev) {
+        ev.preventDefault();
+        var page = $(this).data('page');
+        loadData(page);
     });
-  });
-    
-  // Cambiamos el estilo de los input cuando tienen el focus
-  $(':input').focus(function(){
-    $(this).css('border', '1px dotted #666');
-  })
-    
-  // Realizamos el submit a través del botón insertPublisher
-  $('#insertCategory').live('click', function() {
-    $('#frmAddCategories').submit();
-    $('#frm_addCategories').dialog("close");
-  });
-    
-  // Realizamos el submit a través del botón editPublisher
-  $('#editCategory').live('click', function() {
-    $('#frmEditCategories').submit();
-    $('#frm_editCategories').dialog("close");
-  });
-    
-  $('#loading').hide();
-    
-  $('#loading img').ajaxStart(function(){
-    $(this).show();
-  }).ajaxStop(function(){
-    $(this).hide();
-  });
-    
-  // Enviamos los datos a través del plugin jquery.form para agregar un nuevo usuario
-  var options = { 
-    target      :   '.informe', // elemento destino que se actualizará 
-    beforeSubmit:   showRequest,  //  respuesta antes de llamarpre-submit callback 
-    success     :   showResponse  //  respuesta después de llamar 
-  }; 
- 
-  // vincular formulario usando 'ajaxForm' 
-  $('#frmAddCategories').ajaxForm(options); 
-  $('#frmEditCategories').ajaxForm(options);
-})
 
-// respuesta antes de envío 
-function showRequest(formData, jqForm) { 
-  var extra = [ {
-    name: 'ajax', 
-    value: '1'
-  }];
-  $.merge(formData, extra)
- 
-  return true;  
-} 
- 
-// respuesta después de envío 
-function showResponse(responseText, statusText)  { 
-  if(responseText == 'Se ingres&oacute; correctamente la nueva categor&iacute;a.' || responseText == 'La categor&iacute;a se edit&oacute; satisfactoriamente.'){
-    $('#exito').show();
-    $('#error').hide();
-    $('#frmAddCategories').resetForm();
-    loadData(1);
-  }else{
-    $('#error').show();
-    $('#exito').hide();
-  }
-} 
-
-// Función que preguntará de estar seguro de eliminar un registro
-function deleteRow(registro, id){
-  jConfirm('¿Está seguro que desea eliminar el registro '+registro+'?', 'Eliminación de registro', function(r) {
-    if(r == true){
-      $.ajax({
-        type    :   "POST",
-        url     :   getBaseURL() + "categories/deleteCategory",
-        data    :   "id="+id,
-        success :   function(msg){
-          if(msg == '0'){
-            $('#error').text('No se pudo eliminar el registro').show();
-            loadData(1);
-          }else if(msg == '1'){
-            $('#exito').text('El registro se elimino correctamente').show();
-            loadData(1);
-          }
+    // Comportamiento del botón para ver una página específica
+    $("body").on("click", "#goto_btn", function(ev) {
+        ev.preventDefault();
+        var $page = parseInt($('.goto').val());
+        var $no_of_pages = parseInt($('.total').data('total'));
+        if ($page != 0 && $page <= $no_of_pages) {
+            loadData($page);
+        } else {
+            jAlert('Ingrese una p&aacute;gina entre 1 y ' + $no_of_pages, 'Advertencia');
+            $('.goto').val("").focus();
+            return false;
         }
-      });
-    }
-  });
-}
+    });
+
+    // Comportamiento del botón para busqueda de usuario
+    $("#btnEnviar").click(function() {
+        loadData();
+    });
+
+    // Cuando vayamos ingresando nuestros texto de búsqueda nos irá mostrando el resultado
+    $("#txtCategory").keyup(function() {
+        loadData();
+    });
+
+    // Indicamos que cantidad de registros queremos ir mostrando
+    $("body").on('change', "#registros", function(ev) {
+        ev.preventDefault();
+        loadData();
+    });
+
+    // Cuando presionamos el botón para agregar usuario nos muestra la ventana modal
+    $("body").on("click", "#addCategory", function(ev) {
+        ev.preventDefault();
+        $("#addCategoryModal").modal();
+        $('#addCategoryModal').on('show', function() {
+            // Reseteamos los campos del formulario al abrirse
+            $("#frmAddCategory")[0].reset();
+            $("label[for^='txt'][class='text-error']").remove();
+        })
+    });
+
+    //Validar si username ya esta registrado
+    validateCategory = true;
+    $.validator.addMethod("validateCategory", function(value, element) {
+        $.post(_root_ + "categories/verifyCategory", {category: value})
+                .done(function(data) {
+            validateCategory = (data == 'true') ? true : false;
+        });
+        return validateCategory;
+    }, 'Esta categoría ya se encuentra registrada.');
+
+    $("#frmAddCategory").validate({
+        debug: true,
+        rules: {
+            txtCat: {
+                validateCategory: true,
+            },
+        },
+        errorClass: "text-error",
+        submitHandler: function(form) {
+            $('#addCategoryModal').modal('hide');
+            form.submit();
+        }
+    });
+
+    /**
+     * Abrimos ventana modal para la edición de usuario seleccionado
+     */
+    $("body").on("click", ".editCategory", function(ev) {
+        ev.preventDefault();
+        var $catid = $(this).data('catid');
+        $.post(_root_ + 'categories/getCategory', {"catid": $catid}, function(data) {
+            // Reseteamos los campos del formulario al abrirse
+            $("#frmEditCategory")[0].reset();
+            $("label[for^='txt'][class='text-error']").remove();
+
+            $(":input[name='txtEditCat']").val(data['catname']);
+            $("input:hidden[name='hdCategoryId']").val(data.catid);
+            $("input:hidden[name='hdCatname']").val(data.catname);
+            $("#editCategoryModal").modal();
+        }, "json");
+    });
+
+    $("#frmEditCategory").validate({
+        debug: true,        
+        errorClass: "text-error",
+        submitHandler: function(form) {
+            $('#editCategoryModal').modal('hide');
+            form.submit();
+        }
+    });
+    
+    /**
+     * Eliminar un usuario determinado
+     */
+    $("body").on("click", '.delCategory', function(ev) {
+        ev.preventDefault();
+        var $catname = $(this).data('catname');
+        var $catid = $(this).data('catid');
+        jConfirm('¿Está seguro que desea eliminar el registro ' + $catname + '?', 'Eliminación de registro', function(r) {
+            if (r == true) {
+                $.post(_root_ + 'categories/deleteCategory', {"catid": $catid}, function(data) {
+                    if (data == '1') {
+                        jConfirm('Se elimin&oacute; correctamente el registro', 'Aviso', function(r) {
+                            if (r == true) {
+                                window.location = _root_ + 'categories';
+                            }
+                        });
+                    } else {
+                        jConfirm('No se pudo eliminar el registro, por favor verifique', 'Aviso', function(r) {
+                            if (r == true) {
+                                window.location = _root_ + 'categories';
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    /**
+     * Eliminar varias categorías
+     */
+    $("body").on("click", "#delCategories", function(ev) {
+        ev.preventDefault();
+        jConfirm('¿Está seguro que desea eliminar los registros seleccionados?', 'Eliminación de registros', function(r) {
+            if (r == true) {
+                $("#frmCategories").submit();
+            }
+        });
+    });
+});

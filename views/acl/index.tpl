@@ -31,9 +31,9 @@
                     <tr>
                         <th>&nbsp;</th>
                         <th>Rol</th>
-                        <th>Permisos</th>
-                        <th>Editar</th>
-                        <th>Eliminar</th>
+                        {if ($_acl->permiso('view_perm'))}<th>Permisos</th>{/if}
+                        {if ($_acl->permiso('edit_role'))}<th>Editar</th>{/if}
+                        {if ($_acl->permiso('del_role'))}<th>Eliminar</th>{/if}
                     </tr>
                 </thead>
                 <tbody>
@@ -41,15 +41,15 @@
                         <tr>
                             <td><input type='checkbox' name='idRole[]' value='{$rol.roleID}' /></td>
                             <td>{$rol.role}</td>
-                            <td><a href='{$_layoutParams.root}acl/permisosRole/{$rol.roleID}' title='Permisos'><i class="icon-tasks"></i></a></td>
-                            <td><a href='javascript:void(0);' class="editRole" data-role="{$rol.roleID}" title='Editar rol {$rol.role}'><i class="icon-edit"></i></a></td>
-                            <td><a href='javascript:void(0);' class="delRole" data-role="{$rol.role}" data-roleID="{$rol.roleID}" title="Eliminar rol {$rol.role}"><i class="icon-trash"></i></a></td>
+                            {if ($_acl->permiso('view_perm'))}<td><a href='{$_layoutParams.root}acl/permisosRole/{$rol.roleID}' title='Permisos'><i class="icon-tasks"></i></a></td>{/if}
+                            {if ($_acl->permiso('edit_role'))}<td><a href='javascript:void(0);' class="editRole" data-role="{$rol.roleID}" title='Editar rol {$rol.role}'><i class="icon-edit"></i></a></td>{/if}
+                            {if ($_acl->permiso('del_role'))}<td><a href='javascript:void(0);' class="delRole" data-role="{$rol.role}" data-roleID="{$rol.roleID}" title="Eliminar rol {$rol.role}"><i class="icon-trash"></i></a></td>{/if}
                         </tr>
                     {/foreach}
                 </tbody>
             </table>  
-            <a id="addRole" href="javascript:void(0);" class="btn btn-primary" title="Agregar rol">Agregar role</a>
-            <a id="delRoles" href="javascript:void(0);" class="btn btn-danger" title="Eliminar items">Eliminar items</a>
+            {if ($_acl->permiso('add_role'))}<a id="addRole" href="javascript:void(0);" class="btn btn-primary" title="Agregar rol">Agregar role</a>{/if}
+            {if ($_acl->permiso('del_role'))}<a id="delRoles" href="javascript:void(0);" class="btn btn-danger" title="Eliminar items">Eliminar items</a>{/if}
         </form>
         {if isset($paginacion)}
             <div class="pagination">

@@ -5,18 +5,30 @@
  * Descripción  :   Clase que tratará los mensajes de error de nuestro sistema
  */
 
-class errorController extends Controller {
-  public function __construct() {
-    parent::__construct();
-  }
+class errorController extends Controller 
+{
+    private $_user;
+    
+    public function __construct() 
+    {
+        parent::__construct();
+        $this->_user = $this->loadModel('users');
+    }
 
   /**
    * Cargará la vista por defecto mostrando el mensaje de error predeterminado.
    */
-  public function index() {
-    $this->_view->assign('titulo', APP_NAME . ' - Error');
-    $this->_view->assign('_mensaje', $this->_getError());
-    $this->_view->renderizar('index');
+  public function index() 
+  {
+      if (Session::get('logged_in')) {
+        $dataUser = $this->_user->getUserById(Session::get('userID'));
+        if (is_array($dataUser) && count($dataUser)) {
+          $this->_view->assign('dataUser', $dataUser);
+        }
+      }
+      $this->_view->assign('titulo', APP_NAME . ' - Error');
+      $this->_view->assign('_mensaje', $this->_getError());
+      $this->_view->renderizar('index');
   }
 
   /**
@@ -25,11 +37,18 @@ class errorController extends Controller {
    * @param int $codigo
    *   Código del mensaje a obtener.
    */
-  public function access($codigo = FALSE) {
-    $this->_view->assign('titulo', APP_NAME . ' - Error');
-    $mensaje = $this->_getError($codigo);
-    $this->_view->assign('_mensaje', $mensaje);
-    $this->_view->renderizar('access');
+  public function access($codigo = FALSE) 
+  {
+      if (Session::get('logged_in')) {
+        $dataUser = $this->_user->getUserById(Session::get('userID'));
+        if (is_array($dataUser) && count($dataUser)) {
+          $this->_view->assign('dataUser', $dataUser);
+        }
+      }
+      $this->_view->assign('titulo', APP_NAME . ' - Error');
+      $mensaje = $this->_getError($codigo);
+      $this->_view->assign('_mensaje', $mensaje);
+      $this->_view->renderizar('access');
   }
 
   /**

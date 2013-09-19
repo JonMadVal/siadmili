@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="es-ES">
+<html lang="es">
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+        <meta charset="utf-8" />
         <title>{$titulo|default:"SIADMILI"}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="{$_layoutParams.ruta_css}bootstrap.css" rel="stylesheet" media="screen">
@@ -29,7 +29,17 @@
                         </div>
                         {if Session::get('logged_in')}
                             <div class="span9">
-                                <p class="text-right">Bienvenid@, {Session::get('login')},  <a href="{$_layoutParams.configs.url_site}" title="Librer&iacute;a Crisol" target="_blank">Ver frontend</a> | <a href="{$_layoutParams.root}login/logout" class="logout" title="Cerrar sesi&oacute;n">Logout</a></p>
+                                <p class="text-right">
+                                    Bienvenid@, {Session::get('nombres')},  
+                                    <a href="{$_layoutParams.configs.url_site}" title="Librer&iacute;a Crisol" target="_blank">Ver frontend</a> | <a href="{$_layoutParams.root}login/logout" class="logout" title="Cerrar sesi&oacute;n">Logout</a>
+                                </p>
+                                <ul class="thumbnails avatar">
+                                    <li class="span6">
+                                        <a href="{$_layoutParams.root}usuarios/configUser/{Session::get('userID')}" class="thumbnail" title="Accede a la configuraci&oacute;n de tus datos">
+                                            <img src="{$_layoutParams.root}public/images/users/avatar/thumb_{$dataUser.avatar}" alt="{$dataUser.login}">
+                                        </a>
+                                    </li>
+                                </ul>
                             </div>
                         {/if}
                     </div>

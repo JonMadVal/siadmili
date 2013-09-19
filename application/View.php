@@ -81,6 +81,7 @@ class View extends Smarty
         if (is_readable($this->_rutas['view'] . $vista . '.tpl')) {
             if ($viewAjax) {
                 $this->template_dir = $this->_rutas['view'];
+                $this->assign('_layoutParams', $_params);
                 $this->display($this->_rutas['view'] . $vista . '.tpl');
                 exit;
             }

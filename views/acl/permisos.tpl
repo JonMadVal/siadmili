@@ -20,6 +20,14 @@
         {/foreach}
     </div>
 {/if}
+
+<div class="well well-small">
+    <form name="frmSearch" id="frmSearch" class="form-inline text-center" method="POST">
+        <label for="txtSearchPermiso">Permiso: </label><input type="text" class="input-large" name="txtSearchPermiso" id="txtSearchPermiso">
+        <label for="txtSearchValor">Valor: </label><input type="text" class="input-large" name="txtSearchValor" id="txtSearchValor">     
+        <button type="button" id="btnEnviar" class="btn"><i class="icon-search"></i></button>
+    </form>
+</div>
 <div id="grid">
     {if isset($_permisos) && count($_permisos)}
         <form id="frmPermisos" action="{$_layoutParams.root}acl/deletePermisos" method="post">
@@ -30,8 +38,8 @@
                         <th>&nbsp;</th>
                         <th>Permiso</th>
                         <th>Valor</th>
-                        <th>Editar</th>
-                        <th>Eliminar</th>
+                        {if ($_acl->permiso('edit_perm'))}<th>Editar</th>{/if}
+                        {if ($_acl->permiso('del_perm'))}<th>Eliminar</th>{/if}
                     </tr>
                 </thead>
                 <tbody>
@@ -40,14 +48,14 @@
                             <td><input type='checkbox' name='idPermiso[]' value='{$pr.id_permiso}' /></td>
                             <td>{$pr.permiso}</td>
                             <td>{$pr.key}</td>
-                            <td><a href='javascript:void(0);' class="editPermiso" data-permisoID="{$pr.id_permiso}" title='Editar permiso {$pr.permiso}'><i class="icon-edit"></i></a></td>
-                            <td><a href='javascript:void(0);' class="delPermiso" data-permiso="{$pr.permiso}" data-permisoID="{$pr.id_permiso}" title="Eliminar permiso {$pr.permiso}"><i class="icon-trash"></i></a></td>
+                            {if ($_acl->permiso('edit_perm'))}<td><a href='javascript:void(0);' class="editPermiso" data-permisoID="{$pr.id_permiso}" title='Editar permiso {$pr.permiso}'><i class="icon-edit"></i></a></td>{/if}
+                            {if ($_acl->permiso('del_perm'))}<td><a href='javascript:void(0);' class="delPermiso" data-permiso="{$pr.permiso}" data-permisoID="{$pr.id_permiso}" title="Eliminar permiso {$pr.permiso}"><i class="icon-trash"></i></a></td>{/if}
                         </tr>
                     {/foreach}
                 </tbody>
             </table>  
-            <a id="addPermiso" href="javascript:void(0);" class="btn btn-primary" title="Agregar permiso">Agregar permiso</a>
-            <a id="delPermisos" href="javascript:void(0);" class="btn btn-danger" title="Eliminar items">Eliminar items</a>
+            {if ($_acl->permiso('add_perm'))}<a id="addPermiso" href="javascript:void(0);" class="btn btn-primary" title="Agregar permiso">Agregar permiso</a>{/if}
+            {if ($_acl->permiso('del_perm'))}<a id="delPermisos" href="javascript:void(0);" class="btn btn-danger" title="Eliminar items">Eliminar items</a>{/if}
         </form>
         {if isset($paginacion)}
             <div class="pagination">

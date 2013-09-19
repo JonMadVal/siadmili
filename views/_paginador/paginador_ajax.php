@@ -44,7 +44,7 @@
 
                 <label class="control-label" for="registros">Registros por pagina: </label>
                 <select id="registros" class="span2">
-                    <?php for ($i = 1; $i <= 3; $i += 1): ?>
+                    <?php for ($i = 10; $i <= 100; $i += 10): ?>
                         <option value="<?php echo $i; ?>" <?php
                         if ($i == $this->_paginacion['limite']) {
                             echo 'selected="selected"';

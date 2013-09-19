@@ -17,6 +17,12 @@ header h1 a{
 header h1 a span{
     display: none;
 }
+.avatar{
+    float: right;
+}
+.avatar a{
+    width: 100%;
+}
 /************************* LOGIN ***********************************/
 div#login{
     background: url(../img/login.png) bottom left no-repeat;

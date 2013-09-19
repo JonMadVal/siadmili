@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Nombre       :   usuariosController.php
  * Proyecto     :   Sistema de Administraci&oacute;n de Librer&iacute;a - SIADMILI
@@ -8,14 +7,14 @@
 
 class usuariosController extends Controller 
 {
-    private $_login;
+    private $_user;
     private $_levels;
     private $_paginador;
 
     public function __construct() 
     {
         parent::__construct();
-        $this->_login = $this->loadModel('users');
+        $this->_user= $this->loadModel('users');
         $this->_levels = $this->loadModel('level');
         $this->_paginador = new Paginador();
     }
@@ -29,21 +28,192 @@ class usuariosController extends Controller
             header('location: ' . BASE_URL . 'error/access/5050');
             exit;
         } else {
+            $this->_acl->acceso('admin_access');
+            $this->_acl->acceso('view_user');
+            $dataUser = $this->_user->getUserById(Session::get('userID'));
+            if (is_array($dataUser) && count($dataUser)) {
+                $this->_view->assign('dataUser', $dataUser);
+            }
             $this->_view->setCssPublic(array('jquery.alerts'));
             $this->_view->setJs(array('funciones'));
-            $this->_view->setJsPlugin(array('jquery.alerts', 'jquery.form'));
+            $this->_view->setJsPlugin(array('jquery.alerts'));
+            $this->_view->assign('_validation', 'TRUE');
             $level = $this->_levels->getLevels();
             if (is_array($level) && count($level)) {
                 $this->_view->assign('_level', $level);
             }
-            
-            $this->_view->assign('users', $this->_paginador->paginar($this->_login->getUsers()));
+
+            // Código para agregar un nuevo usuario
+            if ($this->getInt('grabar') && $this->getInt('grabar') == "1") {
+                $this->_acl->acceso('add_user');
+                if ($this->getTexto('txtNombre')) {
+                    if ($this->getTexto('txtAPaterno')) {
+                        if ($this->getTexto('txtAMaterno')) {
+                            if ($this->getTexto('txtUsername')) {
+                                if ($this->_user->verifyUsername($this->getSql('txtUsername'))) {
+                                    if ($this->getTexto('txtPass')) {
+                                        if (strlen($_POST['txtPass']) >= 6) {
+                                            if ($this->getTexto('txtRePass')) {
+                                                if (strlen($_POST['txtRePass']) >= 6) {
+                                                    if ($_POST['txtPass'] == $_POST['txtRePass']) {
+                                                        if ($this->getPostParam('txtEmail')) {
+                                                            if ($this->validarEmail($this->getPostParam('txtEmail'))) {
+                                                                if ($this->_user->verifyEmail($this->getSql('txtEmail'))) {
+                                                                    if ($this->getInt('drdRole') != 0){
+                                                                        $data = array(
+                                                                            'username' => $this->getSql('txtUsername'),
+                                                                            'pass' => Hash::getHash('sha1', $this->getSql('txtPass'), HASH_KEY),
+                                                                            'nombres' => $this->getSql('txtNombre'),
+                                                                            'apaterno' => $this->getSql('txtAPaterno'),
+                                                                            'amaterno' => $this->getSql('txtAMaterno'),
+                                                                            'email' => $this->getPostParam('txtEmail'),
+                                                                            'telefono' => $this->getSql('txtTel'),
+                                                                            'role' => $this->getInt('drdRole'),
+                                                                            'comentario' => $this->getAlphaNum('txtComentario')
+                                                                        );
+                                                                        if ($this->_user->addUser($data)) {
+                                                                            $this->_view->assign('_exito', 'Se agreg&oacute; el nuevo usuario correctamente.');
+                                                                        } else {
+                                                                            $this->_view->assign('_error', 'No se pudo agregar el nuevo usuario. Por favor verifique los datos.');
+                                                                        }
+                                                                    } else {
+                                                                        $this->_view->assign('_error', 'Debe seleccionar el role del usuario.');
+                                                                    }
+                                                                } else {
+                                                                    $this->_view->assign('_error', 'Email ya se encuentra registrado.');
+                                                                }                                                         
+                                                            } else {
+                                                                $this->_view->assign('_error', 'Ingrese un email v&aacute;lido.');
+                                                            }
+                                                        } else {
+                                                            $this->_view->assign('_error', 'Ingrese el email del usuario.');
+                                                        }                                                    
+                                                    } else {
+                                                        $this->_view->assign('_error', 'Los password deben coincidir.');
+                                                    }
+                                                } else {
+                                                    $this->_view->assign('_error', 'El password debe tener como m&iacute;nimo 6 caracteres.');
+                                                }
+                                            } else {
+                                                $this->_view->assign('_error', 'Repetir el password del usuario.');
+                                            }
+                                        } else {
+                                            $this->_view->assign('_error', 'El password debe tener como m&iacute;nimo 6 caracteres.');
+                                        }
+                                    } else {
+                                        $this->_view->assign('_error', 'Ingrese el password del usuario.');
+                                    }
+                                } else {
+                                    $this->_view->assign('_error', 'Username ya se encuentra registrado.');
+                                }
+                            } else {
+                                $this->_view->assign('_error', 'Ingrese el username del usuario.');
+                            }
+                        } else {
+                            $this->_view->assign('_error', 'Ingrese el apallido materno del usuario.');
+                        }
+                    } else {
+                        $this->_view->assign('_error', 'Ingrese el apellido paterno del usuario.');
+                    }
+                } else {
+                    $this->_view->assign('_error', 'Ingrese el nombre del usuario.');         
+                }                
+            }
+
+            // Código para editar un usuario
+            if ($this->getInt('grabar') && $this->getInt('grabar') == "2") {
+                $this->_acl->acceso('edit_user');
+                if ($this->getTexto('txtEditNombre')) {
+                    if ($this->getTexto('txtEditAPaterno')) {
+                        if ($this->getTexto('txtEditAMaterno')) {
+                            if ($this->getTexto('txtEditUsername')) {
+                                if ($this->getTexto('txtEditUsername') != $this->getTexto('hdUsername')) {
+                                    if ($this->_user->verifyUsername($this->getSql('txtEditUsername'))) {
+                                        if ($this->getPostParam('txtEditEmail')) {
+                                            if ($this->validarEmail($this->getPostParam('txtEditEmail'))) {
+                                                if ($this->getTexto('txtEditEmail') != $this->getTexto('hdEmail')) {                                                
+                                                    if ($this->_user->verifyEmail($this->getSql('txtEditEmail'))) {
+                                                        $this->getEditUser();
+                                                    } else {
+                                                        $this->_view->assign('_error', 'Email ya se encuentra registrado.');
+                                                    }                                                         
+                                                } else {
+                                                    $this->getEditUser();
+                                                }
+                                            } else {
+                                                $this->_view->assign('_error', 'Ingrese un email v&aacute;lido.');
+                                            }                                            
+                                        } else {
+                                            $this->_view->assign('_error', 'Ingrese el email del usuario.');
+                                        }  
+                                    } else {
+                                        $this->_view->assign('_error', 'Username ya se encuentra registrado.');
+                                    }
+                                } else {
+                                    if ($this->getPostParam('txtEditEmail')) {
+                                        if ($this->validarEmail($this->getPostParam('txtEditEmail'))) {
+                                            if ($this->getTexto('txtEditEmail') != $this->getTexto('hdEmail')) {                                                
+                                                if ($this->_user->verifyEmail($this->getSql('txtEditEmail'))) {
+                                                    $this->getEditUser();
+                                                } else {
+                                                    $this->_view->assign('_error', 'Email ya se encuentra registrado.');
+                                                }                                                         
+                                            } else {
+                                                $this->getEditUser();
+                                            }
+                                        } else {
+                                            $this->_view->assign('_error', 'Ingrese un email v&aacute;lido.');
+                                        }                                            
+                                    } else {
+                                        $this->_view->assign('_error', 'Ingrese el email del usuario.');
+                                    }  
+                                }
+                            } else {
+                                $this->_view->assign('_error', 'Ingrese el username del usuario.');
+                            }
+                        } else {
+                            $this->_view->assign('_error', 'Ingrese el apallido materno del usuario.');
+                        }
+                    } else {
+                        $this->_view->assign('_error', 'Ingrese el apellido paterno del usuario.');
+                    }
+                } else {
+                    $this->_view->assign('_error', 'Ingrese el nombre del usuario.');         
+                }
+            }
+
+            $this->_view->assign('users', $this->_paginador->paginar($this->_user->getUsers()));
             $this->_view->assign('paginacion', $this->_paginador->getView('paginador_ajax'));
             $this->_view->assign('titulo', APP_NAME . ' - Mantenimiento de Usuarios');
-            $this->_view->renderizar('index', 'Mantenimiento');
+            $this->_view->renderizar('index', 'Mantenimiento');                      
         }
     }
     
+    private function getEditUser() 
+    {
+        if ($this->getInt('drdEditRole') != 0){
+            $data = array(
+                'userID' => $this->getInt('hdUserId'),
+                'username' => $this->getSql('txtEditUsername'),
+                'nombres' => $this->getSql('txtEditNombre'),
+                'apaterno' => $this->getSql('txtEditAPaterno'),
+                'amaterno' => $this->getSql('txtEditAMaterno'),
+                'email' => $this->getPostParam('txtEditEmail'),
+                'telefono' => $this->getSql('txtEditTel'),
+                'role' => $this->getInt('drdEditRole'),
+                'comentario' => $this->getAlphaNum('txtEditComentario')
+            );
+            if ($this->_user->editUser($data)) {
+                $this->_view->assign('_exito', 'Se edit&oacute; el usuario correctamente.');
+            } else {
+                $this->_view->assign('_error', 'No se pudo editar el usuario. Por favor verifique los datos.');
+            }
+        } else {
+            $this->_view->assign('_error', 'Debe seleccionar el role del usuario.');
+        }
+    }
+
+
     /**
      * Mostrar los datos del usuario para realizar la paginación a través de ajax
      *
@@ -75,139 +245,38 @@ class usuariosController extends Controller
         
         $registros = $this->getInt('registros');
         
-        $users = $this->_login->getUsers($condicion);
+        $users = $this->_user->getUsers($condicion);
         if (is_array($users) && count($users)) {
             $this->_view->assign('users', $this->_paginador->paginar($users, $page, $registros));
             $this->_view->assign('paginacion', $this->_paginador->getView('paginador_ajax'));
             $this->_view->renderizar('displayUser', FALSE, FALSE, TRUE);            
         }
     }
-
+    
     /**
-     * Realiza la validación de los datos del nuevo usuario, también verifica si 
-     * se va a subir una imagen y crear un thumbnail y finalmente nos mostrará un 
-     * mensaje de acuerdo a la respuesta obtenida.
-     *
-     * @param $_POST
-     *   Datos del nuevo usuario.
-     *
-     * @return
-     *   Mensaje de error en caso no pase las validaciones y éxito en caso se haya
-     *   ingresado al nuevo usuario.
+     * Método que a través del role enviado vía ajax permitirá validar si el role a añadir existe o no.
      */
-    public function verifyAddUser() 
-    {
-        //$this->_view->datos = $_POST;
-
-        if (!$this->getPostParam('name')) {
-            echo 'Debe introducir el nombre del usuario.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('apaterno')) {
-            echo 'Debe introducir el apellido paterno del usuario.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('amaterno')) {
-            echo 'Debe introducir el apellido materno del usuario.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('login')) {
-            echo 'Debe introducir el login del usuario.<br />';
-            exit;
-        }
-
-        $login = $this->getPostParam('login');
-        if (!$this->_login->getUserByUsername($login)) {
-            echo 'El nombre de usuario ya esta siendo utilizado.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('password')) {
-            echo 'Debe introducir el password del usuario.<br />';
-            exit;
-        }
-
-        $password = $this->getPostParam('password');
-        if (strlen($password) < 6) {
-            echo 'El password debe contener al menos 6 caracteres.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('re-password')) {
-            echo 'Debe repetir el password.<br />';
-            exit;
-        }
-
-        $re_password = $this->getPostParam('re-password');
-        if ($password != $re_password) {
-            echo 'Los password no coinciden.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('email')) {
-            echo 'Debe introducir el email del usuario.<br />';
-            exit;
-        }
-
-        $email = $this->getPostParam('email');
-        if (!$this->validarEmail($email)) {
-            echo 'El email ingresado no es v&aacute;lido.<br />';
-            exit;
-        }
-
-        if (!$this->_login->getUserByEmail($email)) {
-            echo 'El email ingresado se encuentrada registrado.<br />';
-            exit;
-        }
-
-        if ($_POST['level'] == '0') {
-            echo 'Debe seleccionar el nivel del usuario.<br />';
-            exit;
-        }
-
-        $imagen = '';
-        if (isset($_FILES['avatar']['name'])) {
-            $ruta = ROOT . 'public' . DS . 'images' . DS . 'users' . DS;
-            $upload = new upload($_FILES['avatar'], 'es_ES');
-            $upload->file_max_size = '1048576';
-            $upload->allowed = array('image/*');
-            $upload->file_new_name_body = 'upl_' . uniqid();
-            $upload->process($ruta);
-
-            if ($upload->processed) {
-                $imagen = $upload->file_dst_name;
-                $thumb = new upload($upload->file_dst_pathname);
-                $thumb->image_resize = true;
-                $thumb->image_x = 100;
-                $thumb->image_y = 70;
-                $thumb->image_ratio = true;
-                $thumb->file_name_body_pre = 'thumb_';
-                $thumb->process($ruta . 'thumb' . DS);
-            } else {
-                echo 'No se pudo agregar su imagen, verifique.<br />';
-                exit;
-            }
-        }
-
-        $name = $this->getPostParam('name');
-        $apaterno = $this->getPostParam('apaterno');
-        $amaterno = $this->getPostParam('amaterno');
-        $password = Hash::getHash('sha1', $this->getSql('password'), HASH_KEY);
-        $telefono = $this->getPostParam('telefono');
-        $level = $_POST['level'];
-        $comments = $this->getTexto('comments');
-
-        $insert = $this->_login->insertUser($login, $password, $name, $apaterno, $amaterno, $email, $telefono, $imagen, $level, $comments);
-        if ($insert) {
-            echo 'Se ingres&oacute; correctamente al nuevo usuario';
-            exit;
+    public function verifyUsername() 
+    {       
+        if ($this->_user->verifyUsername($this->getSql('username'))) {
+            $valid = 'true';
         } else {
-            echo 'No se puedo agregar el nuevo usuario';
-            exit;
+            $valid = 'false';
         }
+        echo $valid;
+    }
+    
+    /**
+     * Método que a través del role enviado vía ajax permitirá validar si el role a añadir existe o no.
+     */
+    public function verifyEmail() 
+    {       
+        if ($this->_user->verifyEmail($this->getPostParam('email'))) {
+            $valid = 'true';
+        } else {
+            $valid = 'false';
+        }
+        echo $valid;
     }
 
     /**
@@ -219,7 +288,8 @@ class usuariosController extends Controller
      * @return
      *   String con la extensión del $str.
      */
-    public function _getExtension($str) {
+    public function _getExtension($str) 
+    {
         $i = strrpos($str, ".");
         if (!$i) {
             return "";
@@ -239,185 +309,62 @@ class usuariosController extends Controller
      * @return
      *   Mostramos a través de Json los datos del usuario a editar.
      */
-    public function editUser() {
-        $id = $this->filtrarInt($_POST['id']);
-        $result = $this->_login->getUserById($id);
-        if (!$result) {
-            exit;
-        }
-        if (is_array($result)) {
-            foreach ($result as $user) {
-                echo json_encode($user);
-            }
-        }
+    public function getUser() 
+    {
+        $userid = $this->getInt('userid');
+        $result = $this->_user->getUserById($userid);
+        echo json_encode($result);
     }
 
     /**
-     * Realiza la validación de los datos del usuario a editar, también verifica si 
-     * se va a subir una imagen y crear un thumbnail y eliminará en caso ya tenga 
-     * otro avatar y finalmente nos mostrará un mensaje de acuerdo a la respuesta obtenida.
+     * Eliminar de la base de datos uno más usuarios.
      *
-     * @param $_POST
-     *   Datos del usuario a editar.
+     * @param array $_POST['idRole']
+     *   Array con los Id de o los roles a eliminar.
      *
      * @return
-     *   Mensaje de error en caso no pase las validaciones y éxito en caso se haya
-     *   editado al usuario.
+     *   Nos redirige al método index enviando un mensaje de acuerdo a si se eliminó o no 
+     *   el registro.
      */
-    public function verifyEditUser() {
-        if (!$this->getPostParam('nameEdit')) {
-            echo 'Debe introducir el nombre del usuario.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('apaternoEdit')) {
-            echo 'Debe introducir el apellido paterno del usuario.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('amaternoEdit')) {
-            echo 'Debe introducir el apellido materno del usuario.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('loginEdit')) {
-            echo 'Debe introducir el login del usuario.<br />';
-            exit;
-        }
-
-        if (!$this->getPostParam('emailEdit')) {
-            echo 'Debe introducir el email del usuario.<br />';
-            exit;
-        }
-
-        $email = $this->getPostParam('emailEdit');
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            echo 'El email ingresado no es v&aacute;lido.<br />';
-            exit;
-        }
-
-        if ($_POST['levelEdit'] == '0') {
-            echo 'Debe seleccionar el nivel del usuario.<br />';
-            exit;
-        }
-
-        //$imagen = '';
-        $imagen = $_POST['hdAvatar'];
-        if (isset($_FILES['avatarEdit']['name'])) {
-            if (!empty($imagen)) {
-                $ruta_avatar_origin = ROOT . 'public' . DS . 'images' . DS . 'users' . DS . $imagen;
-                $ruta_thumbnail = ROOT . 'public' . DS . 'images' . DS . 'users' . DS . 'thumb' . DS . 'thumb_' . $imagen;
-                unlink($ruta_avatar_origin);
-                unlink($ruta_thumbnail);
-            }
-            $ruta = ROOT . 'public' . DS . 'images' . DS . 'users' . DS;
-            $upload = new upload($_FILES['avatarEdit'], 'es_ES');
-            $upload->file_max_size = '1048576';
-            $upload->allowed = array('image/*');
-            $upload->file_new_name_body = 'upl_' . uniqid();
-            $upload->process($ruta);
-
-            if ($upload->processed) {
-                $imagen = $upload->file_dst_name;
-                $thumb = new upload($upload->file_dst_pathname);
-                $thumb->image_resize = true;
-                $thumb->image_x = 100;
-                $thumb->image_y = 70;
-                $thumb->image_ratio = true;
-                $thumb->file_name_body_pre = 'thumb_';
-                $thumb->process($ruta . 'thumb' . DS);
-            } else {
-                echo 'No se pudo editar su imagen, verifique. <br />';
-                exit;
-            }
-        }
-
-        $id = $this->getPostParam('id');
-        $name = $this->getPostParam('nameEdit');
-        $apaterno = $this->getPostParam('apaternoEdit');
-        $amaterno = $this->getPostParam('amaternoEdit');
-        $login = $this->getPostParam('loginEdit');
-        $hdLogin = $this->getPostParam('hdLogin');
-        $hdEmail = $this->getPostParam('hdEmail');
-        $telefono = $this->getPostParam('telefonoEdit');
-        $level = $_POST['levelEdit'];
-        $comments = $this->getPostParam('commentsEdit');
-        // Cuando no se ha modificado el login
-        if ($login == $hdLogin) {
-            // Cuando no se ha modificado el email
-            if ($email == $hdEmail) {
-                $result = $this->_login->editUserById($name, $apaterno, $amaterno, $email, $telefono, $imagen, $login, $level, $comments, $id);
-                if (!$result) {
-                    echo "No se pudo editar el usuario. Por favor vuelva a intentarlo.";
-                    exit;
+    public function deleteUsers() 
+    {
+        $this->_acl->acceso('del_user');
+        if (isset($_POST['idUser']) && count($_POST['idUser']) > 0) {
+            $errores = array();
+            $exitos = array();
+            foreach ($_POST['idUser'] as $user) {
+                $result = $this->_user->deleteUser($user);
+                if ($result == NULL) {
+                    $errores[] = 'No se pudo eliminar el usuario ' . $user;
                 } else {
-                    echo "El usuario se edit&oacute; satisfactoriamente.";
-                    exit;
-                }
-            } else { // Si se esta modificando el email
-                if (!$this->_login->getUserByEmail($email)) {
-                    echo "No se puede editar el usuario porque el email ya se encuentra registrado";
-                    exit;
-                } else {
-                    $result = $this->_login->editUserById($name, $apaterno, $amaterno, $email, $telefono, $imagen, $login, $level, $comments, $id);
-                    if (!$result) {
-                        echo "No se pudo editar el usuario. Por favor vuelva a intentarlo.";
-                        exit;
-                    } else {
-                        echo "El usuario se edit&oacute; satisfactoriamente.";
-                        exit;
-                    }
+                    $exitos[] = 'Se elimin&oacute; el usuario ' . $user;
                 }
             }
-        } else { // Si login se ha modificado
-            if ($email == $hdEmail) { // Si el email es el mismo
-                if (!$this->_login->getUserByUsername($login)) {
-                    echo "No se puede editar el usuario porque el nombre de usuario esta siendo utilizado";
-                    exit;
-                } else { // El login a modificar no esta registrado
-                    $result = $this->_login->editUserById($name, $apaterno, $amaterno, $email, $telefono, $imagen, $login, $level, $comments, $id);
-                    if (!$result) {
-                        echo "No se pudo editar el usuario. Por favor vuelva a intentarlo.";
-                        exit;
-                    } else {
-                        echo "El usuario se edit&oacute; satisfactoriamente.";
-                        exit;
-                    }
-                }
-            } else { // Si se va a modificar también el email
-                if (!$this->_login->getUserByEmail($email) || !$this->_login->getUserByUsername($login)) {
-                    echo "No se puede editar el usuario porque el nombre de usuario o el email se encuentran registrados.";
-                    exit;
-                } else {
-                    $result = $this->_login->editUserById($name, $apaterno, $amaterno, $email, $telefono, $imagen, $login, $level, $comments, $id);
-                    if (!$result) {
-                        echo "No se pudo editar el usuario. Por favor vuelva a intentarlo.";
-                        exit;
-                    } else {
-                        echo "El usuario se edit&oacute; satisfactoriamente.";
-                        exit;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Eliminar de la base de datos un usuario específico a través de ajax.
-     *
-     * @param int $_POST['id']
-     *   Id del usuario a eliminar.
-     *
-     * @return
-     *   Mostrará 0 en caso falle o 1 en caso se haya eliminado.
-     */
-    public function deleteUser() {
-        $id = $this->filtrarInt($_POST['id']);
-        $result = $this->_login->deleteUser($id);
-        if (!$result) {
-            echo '0';
+            $this->_view->assign('_errores', $errores);
+            $this->_view->assign('_exitos', $exitos);
         } else {
-            echo '1';
+            $this->_view->assign('_error', 'No ha seleccionado usuario a eliminar.');
+        }
+        $this->index();
+    }
+    
+    /**
+     * Eliminar un usuario específico
+     * 
+     * @param int $id Este parámetro es enviado vía ajax y contiene el ID del usuario a eliminar
+     * 
+     * @return str Devuelve un string 0 si no se eliminó o 1 si lo realizó. Esto se devuelve a la 
+     * función ajax.
+     */
+    public function deleteUser() 
+    {
+        if ($this->getInt('id')) {   
+            $result = $this->_user->deleteUser($this->getInt('id'));
+            if ($result == NULL) {
+                echo '0';
+            } else {
+                echo '1';
+            }
         }
     }
 
@@ -430,12 +377,20 @@ class usuariosController extends Controller
      * @return
      *   Listado con los permisos del usuario de acuerdo a su role.
      */
-    public function permisos($userId, $pagina = FALSE) 
+    public function permisos($userId, $pagina = FALSE, $registros = FALSE) 
     {
         if (!Session::get('logged_in') || Session::get('logged_in') == FALSE) {
             header('location: ' . BASE_URL . 'error/access/5050');
             exit;
         } else {
+            $this->_acl->acceso('admin_access');
+            $this->_acl->acceso('view_perm');
+            
+            $dataUser = $this->_user->getUserById(Session::get('userID'));
+            if (is_array($dataUser) && count($dataUser)) {
+                $this->_view->assign('dataUser', $dataUser);
+            }
+            
             $id = $this->filtrarInt($userId);
             if (!$id) $this->redirect('usuarios');
 
@@ -444,8 +399,13 @@ class usuariosController extends Controller
             } else {
                 $pagina = (int) $pagina;
             }
+            
+            if ($this->filtrarInt($registros)) {
+                $registros = $this->filtrarInt($registros);
+            }
 
             if ($this->getInt('guardar') == 1) {
+                $this->_acl->acceso('edit_perm');
                 $values = array_keys($_POST);
                 $replace = array();
                 $eliminar = array();
@@ -478,31 +438,130 @@ class usuariosController extends Controller
                 }
                 
                 for ($i = 0; $i < count($eliminar); $i++) {
-                    $this->_login->eliminarPermiso($eliminar[$i]['userID'], $eliminar[$i]['id_permiso']);
+                    $this->_user->eliminarPermiso($eliminar[$i]['userID'], $eliminar[$i]['id_permiso']);
                 }
 
                 for ($i = 0; $i < count($replace); $i++) {
-                    $this->_login->editarPermiso($replace[$i]['userID'], $replace[$i]['id_permiso'], $replace[$i]['valor']);
+                    $this->_user->editarPermiso($replace[$i]['userID'], $replace[$i]['id_permiso'], $replace[$i]['valor']);
                 }
             }
 
-            $permisosUsuario = $this->_login->getPermisosUsuario($id);
-            $permisosRole = $this->_login->getPermisosRole($id);
-
-            if (!$permisosUsuario || !$permisosRole) {
-                $this->redirect('usuarios');
-            }
+            $permisosUsuario = $this->_user->getPermisosUsuario($id);
+            $permisosRole = $this->_user->getPermisosRole($id);
             
-            $result = array_keys($permisosUsuario);
             $this->_view->setJs(array('fnPermisos'));
             $this->_view->assign('titulo', APP_NAME . ' - Permisos de Usuarios');
-            $this->_view->assign('permisos', $this->_paginador->paginar($result, $pagina));
-            $this->_view->assign('paginacion', $this->_paginador->getView('paginador', 'usuarios/permisos/' . $id));
-            $this->_view->assign('usuario', $permisosUsuario);
+            $this->_view->setCssPublic(array('jquery.alerts'));
+            $this->_view->setJsPlugin(array('jquery.alerts'));
+            
+            // Verificamos los permisos que tiene asignado el usuario de acuerdo a su role
+            if (count($permisosUsuario)) {
+                $result = array_keys($permisosUsuario);
+                $this->_view->assign('permisos', $this->_paginador->paginar($result, $pagina, $registros));
+                $this->_view->assign('usuario', $permisosUsuario);
+            } 
+            
+            $this->_view->assign('paginacion', $this->_paginador->getView('paginador', 'usuarios/permisos/' . $id));            
             $this->_view->assign('role', $permisosRole);
-            $this->_view->assign('info', $this->_login->getUserById($id));
+            $this->_view->assign('info', $this->_user->getUserById($id));
             $this->_view->renderizar('permisos', 'Mantenimiento');
         }
     }
+    
+    /**
+     * Permite configurar la cuenta del usuario logueado
+     * 
+     * @param int $userId
+     *   Id del usuario
+     */
+    public function configUser()
+    {
+        if (!Session::get('logged_in') || Session::get('logged_in') == FALSE) {
+            header('location: ' . BASE_URL . 'error/access/5050');
+            exit;
+        } else {
+            $dataUser = $this->_user->getUserById(Session::get('userID'));
+            if (is_array($dataUser) && count($dataUser)) {
+                $this->_view->assign('dataUser', $dataUser);
+            }
+            //$this->_view->setCssPublic(array('jquery.alerts'));
+            //$this->_view->setJs(array('funciones'));
+            //$this->_view->setJsPlugin(array('jquery.alerts'));
+            //$this->_view->assign('_validation', 'TRUE');
+            $level = $this->_levels->getLevels();
+            if (is_array($level) && count($level)) {
+                $this->_view->assign('_level', $level);
+            }
+            
+            //$this->_view->assign('users', $this->_paginador->paginar($this->_user->getUsers()));
+            //$this->_view->assign('paginacion', $this->_paginador->getView('paginador_ajax'));
+            $this->_view->assign('titulo', APP_NAME . ' - Configuración de Cuenta');
+            $this->_view->renderizar('configUser', 'Mantenimiento');                      
+        }
+    }
+    
+    /*
+    private function _editConfigUser()
+    {
+        if ($this->getInt('drdRole') != 0) {
+            $data = array(
+                'username'  =>  $this->getSql('txtLogin'),                                                        
+                'nombres'   =>  $this->getSql('txtNombres'),
+                'apaterno'  =>  $this->getSql('txtAPaterno'),
+                'amaterno'  =>  $this->getSql('txtAMaterno'),
+                'email'     =>  $this->getSql('txtEmail'),
+                'telefono'  =>  $this->getSql('txtTelefono'),
+                'role'      =>  $this->getInt('drdRole'),
+                'comentario'    => $this->getSql('txtComentario'),
+                'userID'    => Session::get('userID')
+            );
+            
+            // Si vamos a subir un avatar 
+            if (!empty($_FILES['txtAvatar']['name']) && $_FILES['txtAvatar']['name'] != '') {
+                $avatar = $this->getTexto('hdAvatar');
+                $ruta = ROOT . 'public' . DS . 'images' . DS . 'users' . DS;
+                if (!empty($avatar) && $avatar != 'avatar.png') {
+                    unlink($ruta . $this->getTexto('hdAvatar'));
+                    unlink($ruta . 'avatar' . DS . 'thumb_' . $this->getTexto('hdAvatar'));
+                }
+                $imagen = '';                
+                $upload = new upload($_FILES['txtAvatar'], 'es_ES');
+                $upload->file_max_size = '1048576';
+                $upload->allowed = array('image/*');
+                $upload->file_new_name_body = 'upl_' . uniqid();
+                $upload->process($ruta);
 
+                if ($upload->processed) {
+                    $imagen = $upload->file_dst_name;
+                    $thumb = new upload($upload->file_dst_pathname);
+                    $thumb->image_resize = true;
+                    $thumb->image_x = 64;
+                    $thumb->image_y = 64;
+                    $thumb->image_ratio = true;
+                    $thumb->file_name_body_pre = 'thumb_';
+                    $thumb->process($ruta . 'avatar' . DS);
+                } else {
+                    $this->_view->assign('_error', 'No se pudo agregar el avatar.');                     
+                }
+                $data['avatar'] = $imagen;
+                Session::set('avatar', $imagen);
+            }
+
+            if ($this->getTexto('txtPass')) {
+                if (strlen($this->getTexto('txtPass')) >= 6 && strlen($this->getTexto('txtRePass')) >= 6 && $this->getTexto('txtPass') == $this->getTexto('txtRePass')) {
+                    $data['pass'] = Hash::getHash('sha1', $this->getSql('txtPass'), HASH_KEY);
+                } else {
+                    $this->_view->assign('_error', 'Verifique que haya ingresado correctamente los password.');
+                }
+            } 
+
+            if ($this->_user->editUser($data)) {
+                $this->_view->assign('_exito', 'Se edit&oacute; su configuraci&oacute;n correctamente.');
+            } else {
+                $this->_view->assign('_error', 'No se pudo editar su configuraci&oacute;n. Por favor verifique');
+            }      
+        } else {
+            $this->_view->assign('_error', 'No ha seleccionado el role del usuario.'); 
+        }
+    }*/
 }

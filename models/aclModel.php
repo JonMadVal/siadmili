@@ -105,6 +105,11 @@ class aclModel extends Model
             );
         }
         $data = array_merge($this->getPermisosAll(), $data);
+        // Ordenamos el array en función del nombre del permiso
+        foreach ($data as $key => $row) {
+            $nombre[$key]  = $row['nombre'];
+        }
+        array_multisort($nombre, SORT_ASC, $data);        
         return $data;
         $this->_dbh = NULL;
     }
@@ -287,13 +292,19 @@ class aclModel extends Model
 
     /**
      * Listar todos los permisos.
+     * @param str $condicion En caso se desee se enviará un condición de busqueda.
      *
      * @return
      *   False en caso no exista ningún permiso o listado de todos los permisos.
      */
-    public function getPermisos()
+    public function getPermisos($condicion = '')
     {
-        $stmt = $this->_dbh->query("SELECT `id_permiso`, `permiso`, `key` FROM `permisos`");
+        if (!empty($condicion) && $condicion != '') {
+            $stmt = $this->_dbh->query("SELECT `id_permiso`, `permiso`, `key` FROM `permisos` WHERE $condicion order by `permiso`");
+        } else {
+            $stmt = $this->_dbh->query("SELECT `id_permiso`, `permiso`, `key` FROM `permisos` order by `permiso`");
+        }
+        
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
         $this->_dbh = NULL;
     }

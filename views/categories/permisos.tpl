@@ -42,7 +42,7 @@
                     {/foreach}
                 </tbody>
             </table>              
-            {if ($_acl->permiso('edit_perm'))}<input class="btn btn-primary" type="submit" value="Guardar" />{/if}
+            <input class="btn btn-primary" type="submit" value="Guardar" />
         </form>
         {if isset($paginacion)}
             <div class="pagination">

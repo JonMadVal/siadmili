@@ -53,9 +53,11 @@ class loginController extends Controller
                 if (is_array($this->_users) && count($this->_users)) {
                     Session::set('userID', $this->_users['userID']);
                     Session::set('login', $this->_users['login']);
+                    Session::set('nombres', $this->_users['nombres']);
                     Session::set('logged_in', TRUE);
                     Session::set('tiempo', time());
                     Session::set('role', $this->_users['role']);
+                    Session::set('avatar', $this->_users['avatar']);
                     $this->redirect('index');
                 } 
                 else {

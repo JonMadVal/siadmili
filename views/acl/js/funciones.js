@@ -26,14 +26,8 @@ $(document).on("ready", function() {
             $("label[for='txtRole'][class='text-error']").remove();
         })
     });
-
-    /* Enviamos el submit a acl/index para agregar el role
-    $(".btnAddRole").on("click", function(ev) {
-        ev.preventDefault();
-        $("#frmAddRole").submit();
-    });*/
-
-    var roleValido;
+    
+    roleValido = true;
     //Validar si role ya esta registrado
     $.validator.addMethod("validateRole", function(value, element) {
         $.ajax({
@@ -91,6 +85,9 @@ $(document).on("ready", function() {
         }, "json");
     });
 
+    /**
+     * Eliminar un role determinado
+     */
     $("body").on("click", '.delRole', function(ev) {
         ev.preventDefault();
         var $role = $(this).data('role');
@@ -116,6 +113,9 @@ $(document).on("ready", function() {
         });
     });
 
+    /**
+     * Eliminar varios roles a la vez
+     */
     $("#delRoles").on('click', function(ev) {
         ev.preventDefault();
         jConfirm('¿Está seguro que desea eliminar los registros seleccionados?', 'Eliminación de registros', function(r) {

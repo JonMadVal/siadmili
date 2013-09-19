@@ -8,7 +8,7 @@
 
 class aclController extends Controller 
 {
-
+    private $_user;
     private $_aclm;
     private $_paginador;
 
@@ -16,6 +16,7 @@ class aclController extends Controller
     {
         parent::__construct();
         $this->_aclm = $this->loadModel('acl');
+        $this->_user = $this->loadModel('users');
         $this->_paginador = new Paginador();
     }
 
@@ -25,13 +26,21 @@ class aclController extends Controller
             header('location: ' . BASE_URL . 'error/access/5050');
             exit;
         } else {
+            $this->_acl->acceso('admin_access');
+            $this->_acl->acceso('view_role');
             if (!$this->filtrarInt($pagina)) {
                 $pagina = false;
             } else {
                 $pagina = (int) $pagina;
             }
+            
+            $dataUser = $this->_user->getUserById(Session::get('userID'));
+            if (is_array($dataUser) && count($dataUser)) {
+                $this->_view->assign('dataUser', $dataUser);
+            }
 
             if ($this->getInt('grabar') && $this->getInt('grabar') == "1") {
+                $this->_acl->acceso('add_role');
                 if (!$this->getTexto('txtRole')) {
                     $this->_view->assign('_error', 'No ha ingresado el nombre del role.');
                 } else if (!$this->_aclm->getRoleByUsername($this->getSql('txtRole'))) {
@@ -44,6 +53,7 @@ class aclController extends Controller
             }
 
             if ($this->getInt('grabar') && $this->getInt('grabar') == "2") {
+                $this->_acl->acceso('edit_role');
                 if (!$this->getTexto('txtEditRole')) {
                     $this->_view->assign('_error', 'No ha ingresado el nombre del role.');
                 } else if (!$this->_aclm->getRoleByUsername($this->getSql('txtEditRole'))) {
@@ -84,6 +94,13 @@ class aclController extends Controller
             header('location: ' . BASE_URL . 'error/access/5050');
             exit;
         } else {
+            $this->_acl->acceso('admin_access');
+            $this->_acl->acceso('view_perm');
+            $dataUser = $this->_user->getUserById(Session::get('userID'));
+            if (is_array($dataUser) && count($dataUser)) {
+                $this->_view->assign('dataUser', $dataUser);
+            }
+            
             $id = $this->filtrarInt($roleID);
             if (!$id) {
                 $this->redirect('acl');
@@ -102,6 +119,7 @@ class aclController extends Controller
             }
 
             if ($this->getInt('guardar') == 1) {
+                $this->_acl->acceso('edit_perm');
                 $values = array_keys($_POST);
                 $replace = array();
                 $eliminar = array();
@@ -195,6 +213,7 @@ class aclController extends Controller
      */
     public function deleteRoles() 
     {
+        $this->_acl->acceso('del_perm');
         if (isset($_POST['idRole']) && count($_POST['idRole']) > 0) {
             $errores = array();
             $exitos = array();
@@ -243,19 +262,49 @@ class aclController extends Controller
      * @return
      *   Carga la vista con los permisos disponibles.
      */
-    public function permisos($pagina = FALSE) 
+    public function permisos($registros = FALSE, $pagina = FALSE) 
     {
         if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] == FALSE) {
             header('location: ' . BASE_URL . 'error/access/5050');
             exit;
         } else {
+            $this->_acl->acceso('admin_access');
+            $this->_acl->acceso('view_perm');
+            $dataUser = $this->_user->getUserById(Session::get('userID'));
+            if (is_array($dataUser) && count($dataUser)) {
+                $this->_view->assign('dataUser', $dataUser);
+            }
+            
             if (!$this->filtrarInt($pagina)) {
                 $pagina = false;
             } else {
                 $pagina = (int) $pagina;
             }
             
-            if ($this->getInt('grabar') && $this->getInt('grabar') == "1") {     
+            $permiso = $this->getSql('txtSearchPermiso');
+            $valor = $this->getSql('txtSearchValor');
+            $condicion = "";
+
+            if ($permiso) {
+                if ($valor) {
+                    $condicion .= " `permiso` LIKE '%" . $permiso . "%' AND `key` LIKE '%" . $valor . "' ";
+                } else {
+                    $condicion .= " `permiso` LIKE '%" . $permiso . "%'";
+                }
+            } else {
+                if ($valor) {
+                    $condicion .= " `key` LIKE '%" . $valor. "%'";
+                }
+            }
+
+            if (!$this->filtrarInt($registros)) {
+                $registros = 'false';
+            } else {
+                $registros = (int) $registros;
+            }
+                        
+            if ($this->getInt('grabar') && $this->getInt('grabar') == "1") {  
+                $this->_acl->acceso('add_perm');
                 if ($this->getTexto('txtPermiso')) {
                     if ($this->_aclm->verifyPermiso($this->getSql('txtPermiso'))) {
                         if ($this->getTexto('txtKey')) {
@@ -280,6 +329,7 @@ class aclController extends Controller
             }
             
             if ($this->getInt('grabar') && $this->getInt('grabar') == "2") {
+                $this->_acl->acceso('edit_perm');
                 if ($this->getTexto('txtEditPermiso')) {
                     if ($this->getTexto('txtEditPermiso') == $this->getTexto('hd_permiso')) {
                         if ($this->getTexto('txtEditKey')) {
@@ -319,11 +369,11 @@ class aclController extends Controller
                 }
             }
             
-            $permisos = $this->_aclm->getPermisos();
+            $permisos = $this->_aclm->getPermisos($condicion);
             if (count($permisos) && is_array($permisos)) {
                 if (count($permisos) > 10) {
-                    $this->_view->assign('_permisos', $this->_paginador->paginar($permisos, $pagina));
-                    $this->_view->assign('paginacion', $this->_paginador->getView('paginador', 'acl/permisos'));
+                    $this->_view->assign('_permisos', $this->_paginador->paginar($permisos, $pagina, $registros));
+                    $this->_view->assign('paginacion', $this->_paginador->getView('paginador', 'acl/permisos/' . $registros));
                 } else {
                     $this->_view->assign('_permisos', $permisos);
                 }
@@ -388,8 +438,12 @@ class aclController extends Controller
         }
     }
     
+    /**
+     * Eliminar permisos a la vez
+     */
     public function deletePermisos() 
     {
+        $this->_acl->acceso('del_perm');
         if (isset($_POST['idPermiso']) && count($_POST['idPermiso']) > 0) {
             $errores = array();
             $exitos = array();

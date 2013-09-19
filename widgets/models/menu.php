@@ -12,7 +12,13 @@ class menuModelWidget extends Model
     
     public function getMenu()
     {
-        $stmt = $this->_dbh->query("SELECT `menuID`, `menu`, `enlace` FROM `menu`;");
+        if(Session::get('role')) {
+            $roleID = Session::get('role');
+        } else {
+            $roleID = 0;
+        }
+        $stmt = $this->_dbh->query("SELECT `m`.`menuID`, `m`.`menu`, `m`.`enlace` FROM `menu` as `m`, `menu_roles` as `mr` "
+                ."WHERE `m`.`menuID` = `mr`.`menuID` AND `mr`.`roleID` = $roleID;");
         $this->_menu = $stmt->fetchAll();
         return $this->_menu;
         $this->_dbh = null;

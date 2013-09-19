@@ -7,7 +7,7 @@ $(document).on("ready", function() {
         ev.preventDefault();
         var $page = parseInt($('.goto').val());
         var $no_of_pages = parseInt($('.total').data('total'));
-        $("form[name='frm_goto']").attr("action", _root_ + "acl/permisos/" + $page);
+        $("form[name='frm_goto']").attr("action", _root_ + "acl/permisos/FALSE/" + $page);
         if ($page != 0 && $page <= $no_of_pages) {
             $("form[name='frm_goto']").submit();
         } else {
@@ -135,5 +135,17 @@ $(document).on("ready", function() {
                 $("#frmPermisos").submit();
             }
         });
+    });
+    
+    // Comportamiento del botón para busqueda de permiso
+    $("#btnEnviar").click(function() {
+        $("#frmSearch").submit();
+    });
+    
+    $("body").on('change', "#registros", function(ev) {
+        ev.preventDefault();
+        var $registro = $("#registros").val();
+        $("form[name='frm_goto']").attr("action", _root_ + "acl/permisos/" + $registro + "/FALSE/");
+        $("form[name='frm_goto']").submit();
     });
 });

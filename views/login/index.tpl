@@ -1,6 +1,6 @@
 <div id="login">
     <h3 class="text-center">Login Panel de Administraci&oacute;n</h3>
-    <p class="text-right"><a href="#"><i class="icon-question-sign"></i>¿Olvido su password?</a></p>
+    <p class="text-right"><a href="#"><i class="icon-question-sign"></i>¿Olvidó su password&quest;</a></p>
     {if isset($_error)}
         <div class="alert alert-error">{$_error}</div>
     {/if}
@@ -16,7 +16,7 @@
             <div class="control-group">
                 <label class="control-label" for="password">Password:</label>
                 <div class="controls">
-                    <input type="password" id="password" name="password">
+                    <input type="password" id="password" class="required" name="password">
                 </div>
             </div>
 

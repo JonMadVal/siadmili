@@ -41,6 +41,16 @@
                     <input type="text" class="span4 search-query goto">
                     <button type="submit" id='goto_btn' class="btn">Ir..</button>
                 </div>
+                <select id="registros" class="span2">
+                    <?php for ($i = 10; $i <= 100; $i += 10): ?>
+                        <option value="<?php echo $i; ?>" <?php
+                        if ($i == $this->_paginacion['limite']) {
+                            echo 'selected="selected"';
+                        }
+                        ?>><?php echo $i; ?>
+                        </option>
+                    <?php endfor; ?>
+                </select>
                 <span class='total' data-total='<?php echo $this->_paginacion['total'] ?>'>Page <strong><?php echo $this->_paginacion['actual'] ?></strong> de <strong><?php echo $this->_paginacion['total'] ?></strong></span>
             </form>
         </div>

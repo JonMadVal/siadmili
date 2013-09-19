@@ -1,4 +1,4 @@
-$(document).on("ready", function(){
+$(document).on("ready", function() {
     // Asignamos el focus al input para ver página específica
     $(':input.goto').focus();
 
@@ -15,16 +15,6 @@ $(document).on("ready", function(){
             jAlert('Ingrese una p&aacute;gina entre 1 y ' + $no_of_pages, 'Advertencia');
             $('.goto').val("").focus();
             return false;
-            /* En caso no hayamos ingresado la página o esta es superior al total de páginas nos muestra un alert de error
-            $('#errorModal').modal();
-            $('#errorModal').on('shown', function() {
-                $(".modal-body p").text("Ingrese una página entre 1 y " + $no_of_pages);
-                $(':input.goto').val('');
-                $page = null;
-            });
-            $('#errorModal').on('hidden', function() {
-                $(':input.goto').focus();
-            });*/
         }
     });
 });
